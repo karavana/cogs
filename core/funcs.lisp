@@ -1,11 +1,29 @@
 (defparameter *mylist* '(1))
+
+
+(defun substringp (needle haystack &key (test 'char=))
+  (search (string needle)
+          (string haystack)
+          :test test))
+
+
+
+(defun findKeyID (str) ;finds the value of the unique key of the phon
+	(parse-integer (setq key_id 
+						(subseq str (+ (substringp "KEY" str) 4) ;substringp finds the index of "K", that's why we start from index of K plus 4
+										 (substringp ")" str)))))
+
+
 (defun open_ded (path)
  (let ((in (open path :if-does-not-exist nil)))
   (when in
     (loop for line = (read-line in nil)
         while line 
-        	do (if(substringp "MORPH V" line)
-	        		(format t "~a~%" line)
+        	do (setq key_id (findkeyid line)
+        		(if(key_id)
+        				(setf (get 'key 'phon key_id) )
+	        			(symbol-plist 'key))
+
         		)
         			  ;collect (map *mylist* #'digit-char-p line)
 
@@ -14,10 +32,6 @@
 )
 
 
-(defun substringp (needle haystack &key (test 'char=))
-  (search (string needle)
-          (string haystack)
-          :test test))
 
 ;"/home/oguz/Escritorio/ecsotm.ded"
 
