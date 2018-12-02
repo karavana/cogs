@@ -6,34 +6,46 @@
           (string haystack)
           :test test))
 
-
+(defun string-to-list (s)
+  (assert (stringp s) (s) "~s :error, not a string")
+  (coerce s 'list))
 
 (defun findKeyID (str) ;finds the value of the unique key of the phon
 	(parse-integer (setq key_id 
 						(subseq str (+ (substringp "KEY" str) 4) ;substringp finds the index of "K", that's why we start from index of K plus 4
-										 (substringp ")" str)))))
+										        (substringp ")" str)))))
+
+(defun findPhon (str)
+  (defvar afterphon (subseq str (+ (substringp "PHON" str) 5)))
+  (setq phon
+            (subseq afterphon 
+                    0 
+                    (substringp ")" afterphon)))) ;substringp finds the index of "P", that's why we start from index of P plus 5
 
 
 (defun open_ded (path)
+ (defvar last_id 0)
  (let ((in (open path :if-does-not-exist nil)))
   (when in
     (loop for line = (read-line in nil)
         while line 
-        	do (setq key_id (findkeyid line)
-        		(if(key_id)
-        				(setf (get 'key 'phon key_id) )
-	        			(symbol-plist 'key))
+        	do 
+        		(if (setq key_id (findkeyid line))
+                (setq last_id key_id))
 
-        		)
-        			  ;collect (map *mylist* #'digit-char-p line)
+            (if(substringp "MORPH V" line)
+        				(setf (get 'key 'id )last_id)
+                (setf (get 'key 'phon ) (findPhon line))
+	        			;(symbol-plist 'key)))
 
-    )
-    (close in)))
-)
+            )
+
+  )
+  (close in))))
 
 
 
-;"/home/oguz/Escritorio/ecsotm.ded"
+;"/home/oguz/core/ecsotm.ded"
 
 
 
