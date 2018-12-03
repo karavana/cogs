@@ -8,19 +8,33 @@
 
 (defun string-to-list (s)
   (assert (stringp s) (s) "~s :error, not a string")
-  (coerce s 'list))
+  (coerce s 'list)
+)
+
+
 
 (defun findKeyID (str) ;finds the value of the unique key of the phon
-	(parse-integer (setq key_id 
-						(subseq str (+ (substringp "KEY" str) 4) ;substringp finds the index of "K", that's why we start from index of K plus 4
-										        (substringp ")" str)))))
+  (defvar key_index NIL)
+  
+  (if (setq key_index (substringp "KEY" str))
+          
+          (setq key_index (+ key_index 4))
+          (setq key_id    (parse-integer  (subseq str key_index (substringp ")" str)))))
+)                  ;substringp finds the index of "K", that's why we start from index of K plus 4
+
+
 
 (defun findPhon (str)
-  (defvar afterphon (subseq str (+ (substringp "PHON" str) 5)))
-  (setq phon
-            (subseq afterphon 
-                    0 
-                    (substringp ")" afterphon)))) ;substringp finds the index of "P", that's why we start from index of P plus 5
+  (defvar afterphon (subseq str (+  5)))
+  (defvar phon_index NIL)
+  
+  (if (setq phon_index (substringp "PHON" str))
+          (setq afterphon (subseq str (+ phon_index 5)))
+          (setq phon
+            (subseq afterphon 0 (substringp ")" afterphon)))) ;substringp finds the index of "P", that's why we start from index of P plus 5
+)
+
+
 
 
 (defun open_ded (path)
@@ -41,7 +55,8 @@
             )
 
   )
-  (close in))))
+  (close in)))
+)
 
 
 
