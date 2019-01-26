@@ -47,7 +47,7 @@
 			(append (wrap (reverse reversed_test)) '(DIR FS) (wrap test)))
 		
 		else
-		(append (wrap (reverse reversed_test)) '(DIR BS) (wrap test))
+			(append (wrap (reverse reversed_test)) '(DIR BS) (wrap test))
 
 		(if !(length reversed_test > 3)
 			(setq test (reduce #'union reversed_test))
