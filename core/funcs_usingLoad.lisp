@@ -35,25 +35,28 @@
 	 ((BCAT NP2) (FEATS NIL))))
 
 	;type raise to the rightmost argument
+	(defvar reversed_test nil)
+	(defvar dir-of-cat nil)
+	(defvar modal-of-dir nil)
 	(setq reversed_test (reverse test))
 
-	(if ;there are still arguments --> length > 3 (or another check, not sure how to decide)
-		(pop reversed_test) ;this is the cat to be raised
-		(pop reversed_test) ;modal of the direction
-		(pop reversed_test) ;direction of the cat to be type-raised
+	(while (>= (length reversed_test) 3); need to use a real loop keyword, "while" doesnt seem to exist
+		do(
+			(pop reversed_test) ;this is the cat to be raised
+			(setq modal-of-dir (pop reversed_test) ;modal of the direction
+			(setq dir-of-cat (pop reversed_test)) ;direction of the cat to be type-raised
 
 
-		(if;third pop's return value dir bs)
-			(append (wrap (reverse reversed_test)) '(DIR FS) (wrap test)))
-		
-		else
-			(append (wrap (reverse reversed_test)) '(DIR BS) (wrap test))
+			(if (equal '(DIR BS) dir-of-cat)
+				(append (wrap (reverse reversed_test)) (wrap '(DIR FS)) (wrap modal-of-dir) (wrap test))
+				(append (wrap (reverse reversed_test)) (wrap '(DIR BS)) (wrap modal-of-dir) (wrap test)))
 
-		(if !(length reversed_test > 3)
-			(setq test (reduce #'union reversed_test))
-			(setq reversed_test (reverse test)))
-		(else
-		(setq test (reverse reversed_test)))
+			(if (not (>= (length reversed_test) 3))
+				(progn
+					(setq test (reduce #'union reversed_test))
+					(setq reversed_test (reverse test)))
+				
+				(setq test (reverse reversed_test))))
 	)
 
 
