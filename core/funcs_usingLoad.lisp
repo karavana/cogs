@@ -68,7 +68,6 @@
 		)))
 
 
-
 (defun wrap (x)
   "wrap code in parentheses"
   (list x))
@@ -99,14 +98,15 @@
 		(dolist (keys *VERBS-IN-GRAMMAR*)
 			(dolist (cats-in-keys keys)
 				(if  (equal 'SYN (first cats-in-keys)) 
-					(type-raise cats-in-keys))
-				(let (temp *TEMPLATE*)
-					(set-morph temp (get-morph keys))
-					(set-phon temp (get-phon keys))
-					;while *syns* != empty
+					(type-raise (second cats-in-keys))))
+			(let (temp *TEMPLATE*)
+				(set-morph temp (get-morph keys))
+				(set-phon temp (get-phon keys))
+					(loop while (not (equal 0 (length *SYNS*)))
+						do
 					;(set-syn temp (pop *syns*)) ;pop *syns* until empty
 					;(push temp *ccg-grammar*) ;this should be done with a unique (KEY )
-					)))))
+				))))
 
 
 
