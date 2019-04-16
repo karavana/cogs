@@ -5,6 +5,7 @@
 		      (INDEX nil)
 		      (TAG nil)))
 (defparameter *SYNS* NIL)
+(defparameter *LAST-KEY-ID* NIL)
 ;--------get methods----------;
 
 (defun get-morph (v)
@@ -27,6 +28,15 @@
 	"get the direction if it is a complex cat"
 	(assoc 'DIR l))
 
+(defun get-last-key-id (l)
+	"latest key id in the structure"
+	(dolist (keys (last l))
+		(setf *LAST-KEY-ID* (second (assoc 'KEY keys)))))
+
+(defun get-next-key-id ()
+	"increment the last id in the structure and return it"
+	(+ 1 *LAST-KEY-ID*)
+	
 ;---------end of get methods-----------------------;
 
 ;-------------set methods-------------;
@@ -95,6 +105,7 @@
 	(progn
 		(load-ded arg)
 		(find-morph-v *ccg-grammar*)
+		(get-last-key-id *ccg-grammar*)
 		(dolist (keys *VERBS-IN-GRAMMAR*)
 			(dolist (cats-in-keys keys)
 				(if  (equal 'SYN (first cats-in-keys)) 
@@ -102,10 +113,10 @@
 			(let (temp *TEMPLATE*)
 				(set-morph temp (get-morph keys))
 				(set-phon temp (get-phon keys))
-					(loop while (not (equal 0 (length *SYNS*)))
-						do
-					;(set-syn temp (pop *syns*)) ;pop *syns* until empty
-					;(push temp *ccg-grammar*) ;this should be done with a unique (KEY )
+				(loop while (not (equal 0 (length *SYNS*)))
+					do (set-syn temp (pop *syns*))) ;pop *syns* until empty
+			     	(set-key temp (get-next-key-id))
+				(push temp *ccg-grammar*) ;this should be done with a unique (KEY )
 				))))
 
 
