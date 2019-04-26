@@ -110,13 +110,13 @@
 			(dolist (cats-in-keys keys)
 				(if  (equal 'SYN (first cats-in-keys)) 
 					(type-raise (second cats-in-keys))))
-			(let ((temp *TEMPLATE*))
+			(loop while (not (equal 0 (length *SYNS*)))
+				do(let ((temp (copy-alist *TEMPLATE*)))
 				(set-morph temp (get-morph keys))
 				(set-phon temp (get-phon keys))
-				(loop while (not (equal 0 (length *SYNS*)))
-					do(set-syn temp (pop *syns*)) ;pop *syns* until empty
-			     	(set-key temp (get-next-key-id))
-						(append *ccg-grammar* (wrap temp)))))))
+				(set-syn temp (pop *syns*)) ;pop *syns* until empty
+				(set-key temp (get-next-key-id))
+				(append *ccg-grammar* (wrap temp)))))))
 
 
 
