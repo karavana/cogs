@@ -35,7 +35,7 @@
 
 (defun get-next-key-id ()
 	"increment the last id in the structure and return it"
-	(setf *LAST-KEY-ID* (+ 1 *LAST-KEY-ID*)))
+	(+ 1 *LAST-KEY-ID*))
 	
 ;---------end of get methods-----------------------;
 
@@ -110,13 +110,13 @@
 			(dolist (cats-in-keys keys)
 				(if  (equal 'SYN (first cats-in-keys)) 
 					(type-raise (second cats-in-keys))))
-			(let ((temp *TEMPLATE*))
+			(let (temp *TEMPLATE*)
 				(set-morph temp (get-morph keys))
 				(set-phon temp (get-phon keys))
 				(loop while (not (equal 0 (length *SYNS*)))
-					do(set-syn temp (pop *syns*)) ;pop *syns* until empty
+					do (set-syn temp (pop *syns*))) ;pop *syns* until empty
 			     	(set-key temp (get-next-key-id))
-						(append *ccg-grammar* (wrap temp)))))))
+				(push temp *ccg-grammar*))))) ;this should be done with a unique (KEY)
 
 
 
