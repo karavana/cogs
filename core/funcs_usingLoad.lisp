@@ -1,11 +1,18 @@
 (defparameter *VERBS-IN-GRAMMAR* NIL)
-(defparameter *TEMPLATE* `((KEY nil) (PHON nil) (MORPH nil)
+(defparameter *lex-item-TEMPLATE* `((KEY nil) (PHON nil) (MORPH nil)
 		      (SYN nil)
-		      (SEM nil) (PARAM 1.0)
-		      (INDEX nil)
+		      (SEM (LAM P (P X))) (PARAM 1.0)
 		      (TAG nil)))
+(defparameter *lex-rule-TEMPLATE* `((KEY nil) (INSYN NIL)(INSEM LF)
+					(OUTSYN NIL)
+					(OUTSEM (LAM LF (LAM P (P LF))))
+					(INDEX NIL)
+					(PARAM 1.0)))
 (defparameter *SYNS* NIL)
 (defparameter *LAST-KEY-ID* NIL)
+(defparameter *ARGS* NIL)
+(defparameter *MORPHS* '(TVING> TVING< TV1< TV1> TV2< TV2> DV3> DV3 DV3<))
+(defparameter *RAISED-LEX-RULES* NIL)
 ;--------get methods----------;
 
 (defun get-morph (v)
@@ -57,8 +64,20 @@
 	(rplacd (assoc 'morph l) (wrap X)))
 
 (defun set-sem (l X)
-	"replaces the X in the structure (SEM X)"
-	(rplacd (assoc 'sem l) (wrap X)))
+	"replaces the X in the structure (SEM (LAMP P (P X)))"
+	(rplacd (car (reverse (second (assoc 'sem l)))) (wrap X)))
+
+(defun set-index (l X)
+	"replaces the X in the structure (INDEX X)"
+	(rplacd (assoc 'index l) (wrap X)))
+
+(defun set-insyn (l X)
+	"replaces the X in the structure (INSYN X)"
+	(rplacd (assoc 'insyn l) (wrap X)))
+
+(defun set-outsyn (l X)
+	"replaces the X in the structure (OUTSYN X)"
+	(rplacd (assoc 'outsyn l) (wrap X)))
 ;------------end of set methods-----------------;
 
 
@@ -73,9 +92,9 @@
 (defun find-morph-v (ccg-grammar)
 	"find verb morphemes"
 	(dolist (entry ccg-grammar)
-		(if (equal 'V (get-morph entry)) ;todo: get V-like filters from a list
-				(push entry *VERBS-IN-GRAMMAR*)
-		)))
+		(dolist (morph *MORPHS*)
+			(if (equal morph (get-morph entry))
+				(push entry *VERBS-IN-GRAMMAR*)))))
 
 
 (defun wrap (x)
@@ -91,15 +110,35 @@
 	
 
 (defun type-raise (cat)
+	"type raising operation on the given category"
 		(if (not (is-complex-cat cat)) 
 			(return-from type-raise))
 		(let ((dir-of-cat (get-dir cat))
 				 (modal-of-dir (get-modal-of-dir cat)))
 				 (if (equal '(DIR BS) dir-of-cat)
 					(push (append (wrap (car cat)) (wrap '(DIR FS)) (wrap modal-of-dir) (wrap cat)) *SYNS*) 
-					(push (append (wrap (car cat)) (wrap '(DIR BS)) (wrap modal-of-dir) (wrap cat)) *SYNS*)) 
+					(push (append (wrap (car cat)) (wrap '(DIR BS)) (wrap modal-of-dir) (wrap cat)) *SYNS*))
+				 (push (car (reverse cat)) *ARGS*) 
 				 (type-raise (car cat))))
 
+
+(defun random-string (&optional (length 4) (alphabet "ABCDEFGHIJKLMNOPRSTUVYZWX1234567890"))
+  "Returns a random alphabetic string.
+
+The returned string will contain LENGTH characters chosen from
+the vector ALPHABET.
+"
+  (loop with id = (make-string length)
+        with alphabet-length = (length alphabet)
+        for i below length
+        do (setf (cl:aref id i)
+                 (cl:aref alphabet (random alphabet-length)))
+        finally (return id)))
+
+
+;---------------------------------------------------------------
+;------------to create lex-rule entries-------------------------
+;---------------------------------------------------------------
 
 (defun __main__ (arg) ;to simulate how the work flow looks like
 	(progn
@@ -111,12 +150,36 @@
 				(if  (equal 'SYN (first cats-in-keys)) 
 					(type-raise (second cats-in-keys))))
 			(loop while (not (equal 0 (length *SYNS*)))
-				do(let ((temp (copy-alist *TEMPLATE*)))
-				(set-morph temp (get-morph keys))
-				(set-phon temp (get-phon keys))
-				(set-syn temp (pop *syns*)) ;pop *syns* until empty
+				do(let ((temp (copy-alist *lex-rule-TEMPLATE*)))
+				(set-insyn temp (pop *ARGS*))
+				(set-outsyn temp (pop *SYNS*))
 				(set-key temp (get-next-key-id))
-				(append *ccg-grammar* (wrap temp)))))))
+				(set-index temp (random-string 4))
+				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))))
+
+
+
+;---------------------------------------------------------------
+;------------to create lex-item entries-------------------------
+;---------------------------------------------------------------
+
+;(defun __main__ (arg) ;to simulate how the work flow looks like
+;	(progn
+;		(load-ded arg)
+;		(find-morph-v *ccg-grammar*)
+;		(get-last-key-id *ccg-grammar*)
+;		(dolist (keys *VERBS-IN-GRAMMAR*)
+;			(dolist (cats-in-keys keys)
+;				(if  (equal 'SYN (first cats-in-keys)) 
+;					(type-raise (second cats-in-keys))))
+;			(loop while (not (equal 0 (length *SYNS*)))
+;				do(let ((temp (copy-alist *lex-item-TEMPLATE*)))
+;				(set-morph temp (get-morph keys))
+;				(set-phon temp (get-phon keys))
+;				(set-syn temp (pop *SYNS*)) ;pop *syns* until empty
+;				(set-sem temp (pop *ARGS*))
+;				(set-key temp (get-next-key-id))
+;				(setf *ccg-grammar* (append *ccg-grammar* (wrap temp))))))))
 
 
 
@@ -130,12 +193,6 @@
 ;below is a quick environment setting to test and develop
 	;(load-ded "~/Desktop/g1.ded")
 	;(find-morph-v *ccg-grammar*)
-	(defvar dummy `((KEY nil) (PHON nil) (MORPH nil)
-		      (SYN nil)
-		      (SEM nil) (PARAM 1.0)
-		      (INDEX nil)
-		      (TAG nil)))
-
 ;test SYN
 
 	(defvar test3 '((((BCAT S) (FEATS NIL)) (DIR BS) (MODAL STAR) ((BCAT NP) (FEATS NIL)))
@@ -143,9 +200,15 @@
 	 ((BCAT NP2) (FEATS NIL))))
 	(defvar test2 '(((BCAT VP)(FEATS NIL)) (MODAL STAR) (DIR BS)
 	(((BCAT S)(FEATS NIL)) (MODAL STAR) (DIR FS) ((BCAT NP)(FEATS NIL)))))
-	(defvar test '(((((BCAT S) (FEATS NIL)) (DIR BS) (MODAL STAR) ((BCAT NP) (FEATS NIL)))
-	 (DIR FS) (MODAL STAR) ((BCAT NP1) (FEATS NIL))) (DIR FS) (MODAL STAR)
-	 ((BCAT NP2) (FEATS NIL))))
+	(defvar test '((((((BCAT S) (FEATS ((TYPE INF)))) (DIR BS) (MODAL ALL)
+          ((BCAT NP) (FEATS NIL)))
+         (DIR BS) (MODAL ALL) ((BCAT AUX) (FEATS ((TYPE TEMP)))))
+        (DIR FS) (MODAL ALL) ((BCAT (up)) (BCONST T) (FEATS NIL)))
+       (DIR FS) (MODAL ALL) ((BCAT NP) (FEATS NIL))))
+	(defvar test4 '(((((BCAT S) (FEATS ((TYPE Q)))) (DIR BS) (MODAL ALL)
+      ((BCAT AUX) (FEATS ((TYPE BE)))))
+     (DIR FS) (MODAL ALL) ((BCAT NP) (FEATS NIL)))
+    (DIR BS) (MODAL ALL) ((BCAT NP) (FEATS NIL))))
 
 	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
