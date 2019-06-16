@@ -11,8 +11,9 @@
 (defparameter *SYNS* NIL)
 (defparameter *LAST-KEY-ID* NIL)
 (defparameter *ARGS* NIL)
-(defparameter *MORPHS* '(TVING> TVING< TV1< TV1> TV2< TV2> DV3> DV3 DV3<))
+(defparameter *MORPHS* '(TVING>))
 (defparameter *RAISED-LEX-RULES* NIL)
+(defparameter *RAISED-LEX-ITEMS* NIL)
 ;--------get methods----------;
 
 (defun get-morph (v)
@@ -121,6 +122,15 @@
 				 (push (car (reverse cat)) *ARGS*) 
 				 (type-raise (car cat))))
 
+(defun write-to-file (path file)
+	"Writes the 'file' to a specified 'path'"
+	(with-open-file (stream path
+                     :direction :output
+                     :if-exists :supersede
+                     :if-does-not-exist :create)
+  (format stream (write-to-string file))))
+
+
 
 (defun random-string (&optional (length 4) (alphabet "ABCDEFGHIJKLMNOPRSTUVYZWX1234567890"))
   "Returns a random alphabetic string.
@@ -155,7 +165,8 @@ the vector ALPHABET.
 				(set-outsyn temp (pop *SYNS*))
 				(set-key temp (get-next-key-id))
 				(set-index temp (random-string 4))
-				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))))
+				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
+		(write-to-file "~/Desktop/raised-lex-rules.ded" *RAISED-LEX-RULES*)))
 
 
 
@@ -163,24 +174,24 @@ the vector ALPHABET.
 ;------------to create lex-item entries-------------------------
 ;---------------------------------------------------------------
 
-;(defun __main__ (arg) ;to simulate how the work flow looks like
-;	(progn
-;		(load-ded arg)
-;		(find-morph-v *ccg-grammar*)
-;		(get-last-key-id *ccg-grammar*)
-;		(dolist (keys *VERBS-IN-GRAMMAR*)
-;			(dolist (cats-in-keys keys)
-;				(if  (equal 'SYN (first cats-in-keys)) 
-;					(type-raise (second cats-in-keys))))
-;			(loop while (not (equal 0 (length *SYNS*)))
-;				do(let ((temp (copy-alist *lex-item-TEMPLATE*)))
-;				(set-morph temp (get-morph keys))
-;				(set-phon temp (get-phon keys))
-;				(set-syn temp (pop *SYNS*)) ;pop *syns* until empty
-;				(set-sem temp (pop *ARGS*))
-;				(set-key temp (get-next-key-id))
-;				(setf *ccg-grammar* (append *ccg-grammar* (wrap temp))))))))
-
+(defun __main2__ (arg) ;to simulate how the work flow looks like
+	(progn
+		(load-ded arg)
+		(find-morph-v *ccg-grammar*)
+		(get-last-key-id *ccg-grammar*)
+		(dolist (keys *VERBS-IN-GRAMMAR*)
+			(dolist (cats-in-keys keys)
+				(if  (equal 'SYN (first cats-in-keys)) 
+					(type-raise (second cats-in-keys))))
+			(loop while (not (equal 0 (length *SYNS*)))
+				do(let ((temp (copy-alist *lex-item-TEMPLATE*)))
+				(set-morph temp (get-morph keys))
+				(set-phon temp (get-phon keys))
+				(set-syn temp (pop *SYNS*)) ;pop *syns* until empty
+				(set-sem temp (pop *ARGS*))
+				(set-key temp (get-next-key-id))
+				(setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
+		(write-to-file "~/Desktop/raised-lex-items.ded" *RAISED-LEX-ITEMS*)))
 
 
 
