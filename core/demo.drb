@@ -1,0 +1,18 @@
+
+* (load "~/cogs/core/funcs_usingLoad.lisp")
+
+T
+* (__main__ "~/Desktop/eve.ded") 
+NIL
+* ;to start type-raising on eve.ded, using the morphs specified in the *MORPHS* global variable in the lisp file. This will generate a file named raised-lex-rules.ded on your ~/Desktop/
+
+
+* (load "~/cogs/core/funcs_usingLoad.lisp")
+
+T
+* ;load the lisp file again to clear all data saved after calling __main__. This enables us to work with a different main function.
+
+* (__main2__ "~/Desktop/eve.ded") 
+NIL
+* ;again to start type-raising on eve.ded, this time instead of (outsyn xxx) and (outsem xxx), pairs like (phon xxx) and (morph xxx) are added to make debugging possible. Previously generated raised-lex-rules and output of this function named raised-lex-items.ded should have exactly the same amount of (key xxx)s.
+(dribble)
