@@ -166,7 +166,7 @@ the vector ALPHABET.
 				(set-key temp (get-next-key-id))
 				(set-index temp (random-string 4))
 				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
-		(write-to-file "~/Desktop/raised-lex-rules.ded" *RAISED-LEX-RULES*)))
+		(write-to-file "doc/raised-lex-rules.ded" *RAISED-LEX-RULES*)))
 
 
 
@@ -191,7 +191,7 @@ the vector ALPHABET.
 				(set-sem temp (pop *ARGS*))
 				(set-key temp (get-next-key-id))
 				(setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
-		(write-to-file "~/Desktop/raised-lex-items.ded" *RAISED-LEX-ITEMS*)))
+		(write-to-file "doc/raised-lex-items.ded" *RAISED-LEX-ITEMS*)))
 
 
 
