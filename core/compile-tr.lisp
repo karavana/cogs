@@ -129,7 +129,8 @@
                      :if-exists :supersede
                      :if-does-not-exist :create)
   (format stream (write-to-string file))
-  (format t "File created at ~A~%" path)))
+  (format t "File created at ~A~%" path)
+  (format t "The rules also set to the global variable *RAISED-LEX-RULES*~%")))
 
 (defun add-tr-to-grammar ()
 	"add rules to the currently loaded grammar"
