@@ -115,12 +115,12 @@
 		(if (not (is-complex-cat cat)) 
 			(return-from type-raise))
 		(let ((dir-of-cat (get-dir cat))
-				 (modal-of-dir (get-modal-of-dir cat)))
-				 (if (equal '(DIR BS) dir-of-cat)
-					(push (append (wrap (car cat)) (wrap '(DIR FS)) (wrap modal-of-dir) (wrap cat)) *SYNS*) 
-					(push (append (wrap (car cat)) (wrap '(DIR BS)) (wrap modal-of-dir) (wrap cat)) *SYNS*))
-				 (push (car (reverse cat)) *ARGS*) 
-				 (type-raise (car cat))))
+			 (modal-of-dir (get-modal-of-dir cat)))
+			 (if (equal '(DIR BS) dir-of-cat)
+				(push (append (wrap (car cat)) (wrap '(DIR FS)) (wrap modal-of-dir) (wrap cat)) *SYNS*) 
+				(push (append (wrap (car cat)) (wrap '(DIR BS)) (wrap modal-of-dir) (wrap cat)) *SYNS*))
+			 (push (car (reverse cat)) *ARGS*) 
+			 (type-raise (car cat))))
 
 (defun write-to-file (path file)
 	"Writes the 'file' to a specified 'path'"
