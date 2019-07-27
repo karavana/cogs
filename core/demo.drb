@@ -1,18 +1,20 @@
 
-* (load "~/cogs/core/funcs_usingLoad.lisp")
+* (load "~/cogs/core/compile-tr.lisp")
 
 T
-* (__main__ "~/cogs/core/doc/eve.ded")
+* (compile-tr "~/cogs/core/doc/eve.ded" '(V V3 Ving))
 NIL
-* ;to start type-raising on eve.ded, using the morphs specified in the *MORPHS* global variable in the lisp file. This will generate a file named raised-lex-rules.ded on your ~/Desktop/
+* ;to start type-raising on eve.ded, using the morphs specified in the second argument (V V3 Ving). This will generate a file named raised-lex-rules.ded on your ~/cogs/core/doc/
 
 
-* (load "~/cogs/core/funcs_usingLoad.lisp")
+* (load "~/cogs/core/compile-tr.lisp")
 
 T
-* ;load the lisp file again to clear all data saved after calling __main__. This enables us to work with a different main function.
 
-* (__main2__ "~/cogs/core/doc/eve.ded")
+* ;load the lisp file again to clear all data saved after calling compile-tr. This enables us to work with grammar to see what has been type-raised, kind of a debugging function.
+
+* (debug-tr "~/cogs/core/doc/eve.ded" '(V V3 Ving))
 NIL
-* ;again to start type-raising on eve.ded, this time instead of (outsyn xxx) and (outsem xxx), pairs like (phon xxx) and (morph xxx) are added to make debugging possible. Previously generated raised-lex-rules and output of this function named raised-lex-items.ded should have exactly the same amount of (key xxx)s.
+
+* ;again to start type-raising on eve.ded, this time instead of (outsyn xxx) and (outsem xxx), pairs like (phon xxx) and (morph xxx) are added to make debugging possible. Previously generated raised-lex-rules and output of this function named raised-lex-items.ded (generated at ~/cogs/core/doc/) should have exactly the same amount of (key xxx)s.
 (dribble)
