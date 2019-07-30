@@ -160,6 +160,8 @@ the vector ALPHABET.
 
 (defun compile-tr (arg morphs) ;to simulate how the work flow looks like
 	(progn
+		(setq *RAISED-LEX-RULES* NIL) ;set to default
+		(setq *VERBS-IN-GRAMMAR* NIL)
 		(load-ded arg)
 		(find-morph-v *ccg-grammar* morphs)
 		(get-last-key-id *ccg-grammar*)
@@ -184,6 +186,8 @@ the vector ALPHABET.
 
 (defun debug-tr (arg morphs) ;to simulate how the work flow looks like
 	(progn
+		(setq *RAISED-LEX-ITEMS* NIL) ;set to default
+		(setq *VERBS-IN-GRAMMAR* NIL)
 		(load-ded arg)
 		(find-morph-v *ccg-grammar* morphs)
 		(get-last-key-id *ccg-grammar*)
