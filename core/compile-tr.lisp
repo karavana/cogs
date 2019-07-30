@@ -134,20 +134,24 @@
 
 (defun add-tr-to-grammar ()
 	"add rules to the currently loaded grammar"
-	(setf *ccg-grammar* (append *ccg-grammar* *RAISED-LEX-RULES*)))
+	(setf *ccg-grammar* (append *ccg-grammar* *RAISED-LEX-RULES*))
+	(format t "Grammar added at the end of *ccg-grammar*~%"))
 
 (defun random-string (&optional (length 4) (alphabet "ABCDEFGHIJKLMNOPRSTUVYZWX1234567890"))
-  "Returns a random alphabetic string.
+	"Returns a random alphabetic string.
 
 The returned string will contain LENGTH characters chosen from
 the vector ALPHABET.
 "
-  (loop with id = (make-string length)
-        with alphabet-length = (length alphabet)
-        for i below length
-        do (setf (cl:aref id i)
-                 (cl:aref alphabet (random alphabet-length)))
-        finally (return id)))
+	(let 	((symbl 0000)
+        	 (lngth 0000))
+		(loop with id = (make-string length)
+	        with alphabet-length = (length alphabet)
+	        for i below length
+	        do (setf (cl:aref id i)
+	                 (cl:aref alphabet (random alphabet-length)))
+	        	(multiple-value-setq (symbl lngth) (read-from-string id))
+	        	finally (return symbl))))
 
 
 ;---------------------------------------------------------------
@@ -172,7 +176,7 @@ the vector ALPHABET.
 				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
 		(write-to-file "doc/raised-lex-rules.ded" *RAISED-LEX-RULES*)))
 
-
+;it will throw an exception if not worked under cogs/core!!!
 
 ;---------------------------------------------------------------
 ;------------to create lex-item entries-------------------------
