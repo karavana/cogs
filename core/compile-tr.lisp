@@ -143,15 +143,12 @@
 The returned string will contain LENGTH characters chosen from
 the vector ALPHABET.
 "
-	(let 	((symbl 0000)
-        	 (lngth 0000))
-		(loop with id = (make-string length)
-	        with alphabet-length = (length alphabet)
-	        for i below length
-	        do (setf (cl:aref id i)
-	                 (cl:aref alphabet (random alphabet-length)))
-	        	(multiple-value-setq (symbl lngth) (read-from-string id))
-	        	finally (return symbl))))
+	(loop with id = (make-string length)
+        with alphabet-length = (length alphabet)
+        for i below length
+        do (setf (cl:aref id i)
+                 (cl:aref alphabet (random alphabet-length)))
+        finally (return id)))
 
 
 ;---------------------------------------------------------------
