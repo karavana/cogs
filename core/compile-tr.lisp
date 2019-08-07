@@ -1,3 +1,7 @@
+(defpackage :auto-tr
+	(:use :cl
+		:sb-ext))
+
 (defparameter *VERBS-IN-GRAMMAR* NIL)
 (defparameter *lex-item-TEMPLATE* `((KEY nil) (PHON nil) (MORPH nil)
 		      (SYN nil)
@@ -124,34 +128,31 @@
 
 (defun write-to-file (path file)
 	"Writes the 'file' to a specified 'path'"
+	(ensure-directories-exist "doc/")
 	(with-open-file (stream path
                      :direction :output
                      :if-exists :supersede
                      :if-does-not-exist :create)
-  (format stream (write-to-string file))
-  (format t "File created at ~A~%" path)
-  (format t "The rules also set to the global variable *RAISED-LEX-RULES*~%")))
+	(format stream (write-to-string file))
+	(format t "File created at ~A~%" path)
+	(format t "The rules also set to the global variable *RAISED-LEX-RULES*~%")))
 
 (defun add-tr-to-grammar ()
 	"add rules to the currently loaded grammar"
-	(setf *ccg-grammar* (append *ccg-grammar* *RAISED-LEX-RULES*))
-	(format t "Grammar added at the end of *ccg-grammar*~%"))
+	(setf cl-user::*ccg-grammar* (append cl-user::*ccg-grammar* *RAISED-LEX-RULES*))
+	(format t "Grammar added at the end of cl-user::*ccg-grammar*~%"))
 
 (defun random-string (&optional (length 4) (alphabet "ABCDEFGHIJKLMNOPRSTUVYZWX1234567890"))
 	"Returns a random alphabetic string.
 
 The returned string will contain LENGTH characters chosen from
 the vector ALPHABET.
-"
-	(let 	((symbl 0000)
-        	 (lngth 0000))
-		(loop with id = (make-string length)
-	        with alphabet-length = (length alphabet)
+	"(loop with id = (make-string length)
+	   	with alphabet-length = (length alphabet)
 	        for i below length
 	        do (setf (cl:aref id i)
 	                 (cl:aref alphabet (random alphabet-length)))
-	        	(multiple-value-setq (symbl lngth) (read-from-string id))
-	        	finally (return symbl))))
+	        finally (return id)))
 
 
 ;---------------------------------------------------------------
@@ -163,8 +164,8 @@ the vector ALPHABET.
 		(setq *RAISED-LEX-RULES* NIL) ;set to default
 		(setq *VERBS-IN-GRAMMAR* NIL)
 		(load-ded arg)
-		(find-morph-v *ccg-grammar* morphs)
-		(get-last-key-id *ccg-grammar*)
+		(find-morph-v cl-user::*ccg-grammar* morphs)
+		(get-last-key-id cl-user::*ccg-grammar*)
 		(dolist (keys *VERBS-IN-GRAMMAR*)
 			(dolist (cats-in-keys keys)
 				(if  (equal 'SYN (first cats-in-keys)) 
@@ -174,7 +175,7 @@ the vector ALPHABET.
 				(set-insyn temp (pop *ARGS*))
 				(set-outsyn temp (pop *SYNS*))
 				(set-key temp (get-next-key-id))
-				(set-index temp (random-string 4))
+				(set-index temp (gensym "auto-tr"))
 				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
 		(write-to-file "doc/raised-lex-rules.ded" *RAISED-LEX-RULES*)))
 
@@ -189,8 +190,8 @@ the vector ALPHABET.
 		(setq *RAISED-LEX-ITEMS* NIL) ;set to default
 		(setq *VERBS-IN-GRAMMAR* NIL)
 		(load-ded arg)
-		(find-morph-v *ccg-grammar* morphs)
-		(get-last-key-id *ccg-grammar*)
+		(find-morph-v cl-user::*ccg-grammar* morphs)
+		(get-last-key-id cl-user::*ccg-grammar*)
 		(dolist (keys *VERBS-IN-GRAMMAR*)
 			(dolist (cats-in-keys keys)
 				(if  (equal 'SYN (first cats-in-keys)) 
@@ -215,7 +216,7 @@ the vector ALPHABET.
 
 ;below is a quick environment setting to test and develop
 	;(load-ded "~/Desktop/g1.ded")
-	;(find-morph-v *ccg-grammar*)
+	;(find-morph-v cl-user::*ccg-grammar*)
 ;test SYN
 
 	(defvar test3 '((((BCAT S) (FEATS NIL)) (DIR BS) (MODAL STAR) ((BCAT NP) (FEATS NIL)))
@@ -233,7 +234,8 @@ the vector ALPHABET.
      (DIR FS) (MODAL ALL) ((BCAT NP) (FEATS NIL)))
     (DIR BS) (MODAL ALL) ((BCAT NP) (FEATS NIL))))
 
-	
+	;(compile-tr "doc/eve.ded" '(tvb> tvb tvb< tv1 tv1> tv1< tv2 tv2< tv2> tvs-in> tvs-in< tv1-in tv1-on> tv1-on< tv1-on tv1-to< tv1-to> tv1-to tv3-over tv3-over< tv3-over> tv1-off tv1-off> tv1-off< iving-out iv1-out iv1))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;test END;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
