@@ -1,3 +1,8 @@
+(defpackage :auto-tr
+  (:use :cl))         ; keep namespace separate frpm ccglab -hhcb 
+
+(in-package :auto-tr)
+
 (defparameter *VERBS-IN-GRAMMAR* NIL)
 (defparameter *lex-item-TEMPLATE* `((KEY nil) (PHON nil) (MORPH nil)
 		      (SYN nil)
@@ -37,9 +42,11 @@
 	(assoc 'DIR l))
 
 (defun get-last-key-id (l)
-	"latest key id in the structure"
+	"latest key id in the structure---no guarantee that .ded file is ordered by key; find the max"
+	(setf *LAST-KEY-ID* -1) ; no negatives in translation from .ccg to .ded
 	(dolist (keys (last l))
-		(setf *LAST-KEY-ID* (second (assoc 'KEY keys)))))
+		(if (< *LAST-KEY-ID* (second (assoc 'KEY keys)))
+		  (setf *LAST-KEY-ID* (second (assoc 'KEY keys))))))
 
 (defun get-next-key-id ()
 	"increment the last id in the structure and return it"
@@ -134,7 +141,7 @@
 
 (defun add-tr-to-grammar ()
 	"add rules to the currently loaded grammar"
-	(setf *ccg-grammar* (append *ccg-grammar* *RAISED-LEX-RULES*))
+	(setf cl-user::*ccg-grammar* (append cl-user::*ccg-grammar* *RAISED-LEX-RULES*))
 	(format t "Grammar added at the end of *ccg-grammar*~%"))
 
 (defun random-string (&optional (length 4) (alphabet "ABCDEFGHIJKLMNOPRSTUVYZWX1234567890"))
@@ -156,24 +163,23 @@ the vector ALPHABET.
 ;---------------------------------------------------------------
 
 (defun compile-tr (arg morphs) ;to simulate how the work flow looks like
-	(progn
-		(setq *RAISED-LEX-RULES* NIL) ;set to default
-		(setq *VERBS-IN-GRAMMAR* NIL)
-		(load-ded arg)
-		(find-morph-v *ccg-grammar* morphs)
-		(get-last-key-id *ccg-grammar*)
-		(dolist (keys *VERBS-IN-GRAMMAR*)
-			(dolist (cats-in-keys keys)
-				(if  (equal 'SYN (first cats-in-keys)) 
-					(type-raise (second cats-in-keys))))
-			(loop while (not (equal 0 (length *SYNS*)))
-				do(let ((temp (copy-alist *lex-rule-TEMPLATE*)))
-				(set-insyn temp (pop *ARGS*))
-				(set-outsyn temp (pop *SYNS*))
-				(set-key temp (get-next-key-id))
-				(set-index temp (random-string 4))
-				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
-		(write-to-file "doc/raised-lex-rules.ded" *RAISED-LEX-RULES*)))
+  (setf *RAISED-LEX-RULES* NIL) ;set to default
+  (setf *VERBS-IN-GRAMMAR* NIL)
+  (load-ded arg)
+  (find-morph-v cl-user::*ccg-grammar* morphs)
+  (get-last-key-id cl-user::*ccg-grammar*)
+  (dolist (keys *VERBS-IN-GRAMMAR*)
+    (dolist (cats-in-keys keys)
+      (if  (equal 'SYN (first cats-in-keys)) 
+	(type-raise (second cats-in-keys))))
+    (loop while (not (equal 0 (length *SYNS*)))
+	  do(let ((temp (copy-alist *lex-rule-TEMPLATE*)))
+	      (set-insyn temp (pop *ARGS*))
+	      (set-outsyn temp (pop *SYNS*))
+	      (set-key temp (get-next-key-id))
+	      (set-index temp (random-string 4))
+	      (setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
+  (write-to-file "raised-lex-rules.ded" *RAISED-LEX-RULES*))
 
 ;it will throw an exception if not worked under cogs/core!!!
 
@@ -182,25 +188,24 @@ the vector ALPHABET.
 ;---------------------------------------------------------------
 
 (defun debug-tr (arg morphs) ;to simulate how the work flow looks like
-	(progn
-		(setq *RAISED-LEX-ITEMS* NIL) ;set to default
-		(setq *VERBS-IN-GRAMMAR* NIL)
-		(load-ded arg)
-		(find-morph-v *ccg-grammar* morphs)
-		(get-last-key-id *ccg-grammar*)
-		(dolist (keys *VERBS-IN-GRAMMAR*)
-			(dolist (cats-in-keys keys)
-				(if  (equal 'SYN (first cats-in-keys)) 
-					(type-raise (second cats-in-keys))))
-			(loop while (not (equal 0 (length *SYNS*)))
-				do(let ((temp (copy-alist *lex-item-TEMPLATE*)))
-				(set-morph temp (get-morph keys))
-				(set-phon temp (get-phon keys))
-				(set-syn temp (pop *SYNS*)) ;pop *syns* until empty
-				(set-sem temp (pop *ARGS*))
-				(set-key temp (get-next-key-id))
-				(setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
-		(write-to-file "doc/raised-lex-items.ded" *RAISED-LEX-ITEMS*)))
+  (setq *RAISED-LEX-ITEMS* NIL) ;set to default
+  (setq *VERBS-IN-GRAMMAR* NIL)
+  (load-ded arg)
+  (find-morph-v *ccg-grammar* morphs)
+  (get-last-key-id *ccg-grammar*)
+  (dolist (keys *VERBS-IN-GRAMMAR*)
+    (dolist (cats-in-keys keys)
+      (if  (equal 'SYN (first cats-in-keys)) 
+	(type-raise (second cats-in-keys))))
+    (loop while (not (equal 0 (length *SYNS*)))
+	  do(let ((temp (copy-alist *lex-item-TEMPLATE*)))
+	      (set-morph temp (get-morph keys))
+	      (set-phon temp (get-phon keys))
+	      (set-syn temp (pop *SYNS*)) ;pop *syns* until empty
+	      (set-sem temp (pop *ARGS*))
+	      (set-key temp (get-next-key-id))
+	      (setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
+  (write-to-file "raised-lex-items.ded" *RAISED-LEX-ITEMS*))
 
 
 
@@ -234,3 +239,5 @@ the vector ALPHABET.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;test END;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(in-package :cl-user) ; get out of package after load
