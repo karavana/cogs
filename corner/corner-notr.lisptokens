@@ -1,0 +1,7 @@
+(
+
+the d  |:=|  np |/|  |*| n |:|   |\\| x |.|  x |;| 
+man n  |:=|  n |:|  !man |;| 
+in p   |:=|   |(| n |\\| n |)|  |/|  |*| np |:|   |\\| x |\\| y |.| !in x y |;| 
+corner n  |:=|  n |:|  !corner |;| 
+hits v  |:=|   |(| s |\\| np |)|  |/| np |:|   |\\| x |\\| y |.| !hits x y |;| )

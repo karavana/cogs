@@ -1,7 +1,7 @@
-(defpackage :auto-tr
-  (:use :cl))         ; keep namespace separate frpm ccglab -hhcb 
+;(defpackage :auto-tr
+;  (:use :cl))         ; keep namespace separate from ccglab, which is in :cl-user -hhcb 
 
-(in-package :auto-tr)
+;(in-package :auto-tr)
 
 (defparameter *VERBS-IN-GRAMMAR* NIL)
 (defparameter *lex-item-TEMPLATE* `((KEY nil) (PHON nil) (MORPH nil)
@@ -44,9 +44,9 @@
 (defun get-last-key-id (l)
 	"latest key id in the structure---no guarantee that .ded file is ordered by key; find the max"
 	(setf *LAST-KEY-ID* -1) ; no negatives in translation from .ccg to .ded
-	(dolist (keys (last l))
-		(if (< *LAST-KEY-ID* (second (assoc 'KEY keys)))
-		  (setf *LAST-KEY-ID* (second (assoc 'KEY keys))))))
+	(dolist (e l)
+		(if (< *LAST-KEY-ID* (second (assoc 'KEY e)))
+		  (setf *LAST-KEY-ID* (second (assoc 'KEY e))))))
 
 (defun get-next-key-id ()
 	"increment the last id in the structure and return it"
@@ -93,9 +93,12 @@
 	"get rid of the list's extra parentheses"
 	(reduce #'union l))
 
-(defun load-ded (path_to_ded)
-	"load the ded file from a path"
-	(load path_to_ded))
+(defun load-gram (path_to_ded)
+  "load the ded file from a path"
+;  (in-package :cl-user) ; to load into *ccg-grammar* there
+  (load path_to_ded)
+;  (in-package :auto-tr))
+)
 
 (defun find-morph-v (ccg-grammar morphs)
 	"find verb morphemes"
@@ -144,41 +147,31 @@
 	(setf cl-user::*ccg-grammar* (append cl-user::*ccg-grammar* *RAISED-LEX-RULES*))
 	(format t "Grammar added at the end of *ccg-grammar*~%"))
 
-(defun random-string (&optional (length 4) (alphabet "ABCDEFGHIJKLMNOPRSTUVYZWX1234567890"))
-	"Returns a random alphabetic string.
-
-The returned string will contain LENGTH characters chosen from
-the vector ALPHABET.
-"
-	(loop with id = (make-string length)
-        with alphabet-length = (length alphabet)
-        for i below length
-        do (setf (cl:aref id i)
-                 (cl:aref alphabet (random alphabet-length)))
-        finally (return id)))
-
+(defun save-compile (fn)
+  (add-tr-to-grammar)
+  (save-grammar fn))
 
 ;---------------------------------------------------------------
 ;------------to create lex-rule entries-------------------------
 ;---------------------------------------------------------------
 
-(defun compile-tr (arg morphs) ;to simulate how the work flow looks like
+(defun compile-tr (arg morphs) 
   (setf *RAISED-LEX-RULES* NIL) ;set to default
   (setf *VERBS-IN-GRAMMAR* NIL)
-  (load-ded arg)
+  (load-gram arg)  ; ded and ind have same format--changed to load-gram
   (find-morph-v cl-user::*ccg-grammar* morphs)
   (get-last-key-id cl-user::*ccg-grammar*)
   (dolist (keys *VERBS-IN-GRAMMAR*)
     (dolist (cats-in-keys keys)
-      (if  (equal 'SYN (first cats-in-keys)) 
+      (if  (equal 'SYN (first cats-in-keys))   ; CB: first olmazsa SYN ne olacak?
 	(type-raise (second cats-in-keys))))
     (loop while (not (equal 0 (length *SYNS*)))
-	  do(let ((temp (copy-alist *lex-rule-TEMPLATE*)))
-	      (set-insyn temp (pop *ARGS*))
-	      (set-outsyn temp (pop *SYNS*))
-	      (set-key temp (get-next-key-id))
-	      (set-index temp (random-string 4))
-	      (setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
+	  do (let ((temp (copy-alist *lex-rule-TEMPLATE*)))
+	       (set-insyn temp (pop *ARGS*))
+	       (set-outsyn temp (pop *SYNS*))
+	       (set-key temp (get-next-key-id))
+	       (set-index temp (gensym "auto-tr-"))
+	       (setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
   (write-to-file "raised-lex-rules.ded" *RAISED-LEX-RULES*))
 
 ;it will throw an exception if not worked under cogs/core!!!
@@ -190,9 +183,9 @@ the vector ALPHABET.
 (defun debug-tr (arg morphs) ;to simulate how the work flow looks like
   (setq *RAISED-LEX-ITEMS* NIL) ;set to default
   (setq *VERBS-IN-GRAMMAR* NIL)
-  (load-ded arg)
-  (find-morph-v *ccg-grammar* morphs)
-  (get-last-key-id *ccg-grammar*)
+  (load-gram arg)
+  (find-morph-v cl-user::*ccg-grammar* morphs)
+  (get-last-key-id cl-user::*ccg-grammar*)
   (dolist (keys *VERBS-IN-GRAMMAR*)
     (dolist (cats-in-keys keys)
       (if  (equal 'SYN (first cats-in-keys)) 
@@ -206,38 +199,5 @@ the vector ALPHABET.
 	      (set-key temp (get-next-key-id))
 	      (setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
   (write-to-file "raised-lex-items.ded" *RAISED-LEX-ITEMS*))
-
-
-
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;test start;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;below is a quick environment setting to test and develop
-	;(load-ded "~/Desktop/g1.ded")
-	;(find-morph-v *ccg-grammar*)
-;test SYN
-
-	(defvar test3 '((((BCAT S) (FEATS NIL)) (DIR BS) (MODAL STAR) ((BCAT NP) (FEATS NIL)))
-	 (DIR FS) (MODAL STAR) ((BCAT NP1) (FEATS NIL)) (DIR FS) (MODAL STAR)
-	 ((BCAT NP2) (FEATS NIL))))
-	(defvar test2 '(((BCAT VP)(FEATS NIL)) (MODAL STAR) (DIR BS)
-	(((BCAT S)(FEATS NIL)) (MODAL STAR) (DIR FS) ((BCAT NP)(FEATS NIL)))))
-	(defvar test '((((((BCAT S) (FEATS ((TYPE INF)))) (DIR BS) (MODAL ALL)
-          ((BCAT NP) (FEATS NIL)))
-         (DIR BS) (MODAL ALL) ((BCAT AUX) (FEATS ((TYPE TEMP)))))
-        (DIR FS) (MODAL ALL) ((BCAT (up)) (BCONST T) (FEATS NIL)))
-       (DIR FS) (MODAL ALL) ((BCAT NP) (FEATS NIL))))
-	(defvar test4 '(((((BCAT S) (FEATS ((TYPE Q)))) (DIR BS) (MODAL ALL)
-      ((BCAT AUX) (FEATS ((TYPE BE)))))
-     (DIR FS) (MODAL ALL) ((BCAT NP) (FEATS NIL)))
-    (DIR BS) (MODAL ALL) ((BCAT NP) (FEATS NIL))))
-
-	
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;test END;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (in-package :cl-user) ; get out of package after load
