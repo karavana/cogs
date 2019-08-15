@@ -10,7 +10,7 @@
 		      (TAG nil)))
 (defccglab *lex-rule-TEMPLATE* `((KEY nil) (INSYN NIL)(INSEM LF)
 					(OUTSYN NIL)
-					(OUTSEM (LAM LF (LAM P (P LF))))
+					(OUTSEM (LAM LF (LAM P (P LF))))  ; all auto-generated tr rules use these var names--no need for semantic unification
 					(INDEX NIL)
 					(PARAM 1.0)))  ;; may be different if an .ind file is compiled --hhcb
 (defccglab *SYNS* NIL)
@@ -138,12 +138,13 @@
 
 (defun add-tr-to-grammar ()
 	"add rules to the currently loaded grammar"
-	(setf cl-user::*ccg-grammar* (append cl-user::*ccg-grammar* *RAISED-LEX-RULES*))
-	(format t "Grammar added at the end of *ccg-grammar*~%"))
+	(setf cl-user::*ccg-grammar* (append cl-user::*ccg-grammar* (reverse *RAISED-LEX-RULES*)))
+	(format t "Type-raising rules added at the end of *ccg-grammar*~%"))
 
 (defun save-compile (fn)
   (add-tr-to-grammar)
-  (save-grammar fn))
+  (save-grammar fn)
+  (format t "~%saved."))
 
 ;---------------------------------------------------------------
 ;------------to create lex-rule entries-------------------------
@@ -159,12 +160,12 @@
     (type-raise (second (assoc 'SYN v-entry)))
     (loop while (not (equal 0 (length *SYNS*)))
 	do (let ((temp (copy-alist *lex-rule-TEMPLATE*)))
-	     (set-insyn temp (pop *ARGS*))
+	     (set-insyn temp (pop *ARGS*))   ; don't we need to initialize *ARGS* and *SYNS* to nil before the loop?
 	     (set-outsyn temp (pop *SYNS*))
 	     (set-key temp (get-next-key-id))
 	     (set-index temp (gensym "auto-tr-"))
-	     (setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
-  (write-to-file "raised-lex-rules.ded" *RAISED-LEX-RULES*))
+	     (push temp *RAISED-LEX-RULES*))))
+  (reverse *RAISED-LEX-RULES*))
 
 ;it will throw an exception if not worked under cogs/core!!!
 
