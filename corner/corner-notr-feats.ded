@@ -1,0 +1,21 @@
+(DEFPARAMETER *CCG-GRAMMAR*
+  '(((KEY 1) (PHON THE) (MORPH D)
+     (SYN
+      (((BCAT NP) (FEATS ((F3 V4) (F1 V1)))) (DIR FS) (MODAL STAR)
+       ((BCAT N) (FEATS NIL))))
+     (SEM (LAM X X)) (PARAM 1.0))
+    ((KEY 2) (PHON MAN) (MORPH N) (SYN ((BCAT N) (FEATS NIL))) (SEM "MAN")
+     (PARAM 1.0))
+    ((KEY 3) (PHON IN) (MORPH P)
+     (SYN
+      ((((BCAT N) (FEATS NIL)) (DIR BS) (MODAL ALL) ((BCAT N) (FEATS NIL)))
+       (DIR FS) (MODAL STAR) ((BCAT NP) (FEATS NIL))))
+     (SEM (LAM X (LAM Y (("IN" X) Y)))) (PARAM 1.0))
+    ((KEY 4) (PHON CORNER) (MORPH N) (SYN ((BCAT N) (FEATS NIL)))
+     (SEM "CORNER") (PARAM 1.0))
+    ((KEY 5) (PHON HITS) (MORPH V)
+     (SYN
+      ((((BCAT S) (FEATS ((F5 V5) (F6 V6)))) (DIR BS) (MODAL ALL)
+        ((BCAT NP) (FEATS ((F1 V1) (F2 V2)))))
+       (DIR FS) (MODAL ALL) ((BCAT NP) (FEATS ((F3 V3) (F4 V4))))))
+     (SEM (LAM X (LAM Y (("HITS" X) Y)))) (PARAM 1.0))))
