@@ -1,4 +1,5 @@
 1. Do we check that derived TR rules subsume each other? This will seriously reduce the number of rules.
 Doing it post hoc is costly. we should do subsumption check on input and output; if both
 are subsumed in a pair of rules; keep the general one and discard the specific one.
-2. S/(S\NP) is actually lexical; cb to implement this.
+2. S/NP is actually lexical English; one verb entry suffices to get it to work; need it to get S\(S/NP). cb to implement this.
+3. Use hashtables for 1; cat-match needs for unif'n.

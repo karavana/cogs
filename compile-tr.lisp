@@ -184,13 +184,13 @@
       (if  (equal 'SYN (first cats-in-keys)) 
 	(type-raise (second cats-in-keys))))
     (loop while (not (equal 0 (length *SYNS*)))
-	  do(let ((temp (copy-alist *lex-item-TEMPLATE*)))
-	      (set-morph temp (get-morph keys))
-	      (set-phon temp (get-phon keys))
-	      (set-syn temp (pop *SYNS*)) ;pop *syns* until empty
-	      (set-sem temp (pop *ARGS*))
-	      (set-key temp (get-next-key-id))
-	      (setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
+	  do (let ((temp (copy-alist *lex-item-TEMPLATE*)))
+	       (set-morph temp (get-morph keys))
+	       (set-phon temp (get-phon keys))
+	       (set-syn temp (pop *SYNS*)) ;pop *syns* until empty
+	       (set-sem temp (pop *ARGS*))
+	       (set-key temp (get-next-key-id))
+	       (setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
   (write-to-file "raised-lex-items.ded" *RAISED-LEX-ITEMS*))
 
-(in-package :cl-user) ; get out of package after load
+;(in-package :cl-user) ; get out of package after load
