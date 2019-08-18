@@ -41,9 +41,11 @@
 	(assoc 'DIR l))
 
 (defun get-last-key-id (l)
-	"latest key id in the structure"
-	(dolist (keys (last l))
-		(setf *LAST-KEY-ID* (second (assoc 'KEY keys)))))
+	"latest key id in the structure---no guarantee that .ded file is ordered by key; find the max"
+	(setf *LAST-KEY-ID* -1) ; no negatives in translation from .ccg to .ded
+	(dolist (e l)
+		(if (< *LAST-KEY-ID* (second (assoc 'KEY e)))
+		  (setf *LAST-KEY-ID* (second (assoc 'KEY e))))))
 
 (defun get-next-key-id ()
 	"increment the last id in the structure and return it"
@@ -154,6 +156,10 @@ the vector ALPHABET.
 	                 (cl:aref alphabet (random alphabet-length)))
 	        finally (return id)))
 
+(defun save-compile (fn)
+  (add-tr-to-grammar)
+  (save-grammar fn)
+  (format t "~%saved."))
 
 ;---------------------------------------------------------------
 ;------------to create lex-rule entries-------------------------
@@ -167,9 +173,7 @@ the vector ALPHABET.
 		(find-morph-v cl-user::*ccg-grammar* morphs)
 		(get-last-key-id cl-user::*ccg-grammar*)
 		(dolist (keys *VERBS-IN-GRAMMAR*)
-			(dolist (cats-in-keys keys)
-				(if  (equal 'SYN (first cats-in-keys)) 
-					(type-raise (second cats-in-keys))))
+			(type-raise (second (assoc 'SYN keys)))
 			(loop while (not (equal 0 (length *SYNS*)))
 				do(let ((temp (copy-alist *lex-rule-TEMPLATE*)))
 				(set-insyn temp (pop *ARGS*))
@@ -179,7 +183,6 @@ the vector ALPHABET.
 				(setf *RAISED-LEX-RULES* (append *RAISED-LEX-RULES* (wrap temp))))))
 		(write-to-file "doc/raised-lex-rules.ded" *RAISED-LEX-RULES*)))
 
-;it will throw an exception if not worked under cogs/core!!!
 
 ;---------------------------------------------------------------
 ;------------to create lex-item entries-------------------------
@@ -193,9 +196,7 @@ the vector ALPHABET.
 		(find-morph-v cl-user::*ccg-grammar* morphs)
 		(get-last-key-id cl-user::*ccg-grammar*)
 		(dolist (keys *VERBS-IN-GRAMMAR*)
-			(dolist (cats-in-keys keys)
-				(if  (equal 'SYN (first cats-in-keys)) 
-					(type-raise (second cats-in-keys))))
+			(type-raise (second (assoc 'SYN keys)))
 			(loop while (not (equal 0 (length *SYNS*)))
 				do(let ((temp (copy-alist *lex-item-TEMPLATE*)))
 				(set-morph temp (get-morph keys))
