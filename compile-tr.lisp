@@ -167,11 +167,11 @@
 	     (push temp *RAISED-LEX-RULES*))))
   (reverse *RAISED-LEX-RULES*))
 
-;it will throw an exception if not worked under cogs/core!!!
-
-;---------------------------------------------------------------
-;------------to create lex-item entries-------------------------
-;---------------------------------------------------------------
+(defun compile-and-subsume-tr (arg morphs)
+  "first finds all rules, then reduces the rule set to MGUs of pairs iteratively.
+  We use hashtables to be compatible with MGU function cat-match---and for efficieny."
+  (hash-tr (compile-tr (arg morphs)))
+  (subsume-tr))
 
 (defun debug-tr (arg morphs) ;to simulate how the work flow looks like
   (setq *RAISED-LEX-ITEMS* NIL) ;set to default
