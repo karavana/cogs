@@ -1,0 +1,13 @@
+
+> (load "auto-tr")
+
+T
+> (time (compile-and-subsume-tr "eve.ded" '(TVB TVB> TVB< TV1 TV1> TV1< TV1-TO TV1-TO< TV1-TO> TV3-OVER TV3-OVER3< TV3-OVER3> IV1)))
+NIL
+> (length *raised-lex-rules*)
+
+2426
+> (hash-table-count *ht-tr*)
+
+72
+> (dribble)
