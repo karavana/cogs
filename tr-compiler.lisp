@@ -161,7 +161,7 @@
 
 (defun mk-cat (synht &optional (res nil))
   (cond ((null synht) res)
-	((basicp-hash synht) (append (mk-bcat synht) res)) ; only BCAT and others feats in same synht
+	((basicp-hash synht) (append (mk-bcat synht) res)) ; only BCAT and other feats in same synht
 	(t (append (list (mk-cat (machash 'RESULT synht)))
 		   (mk-nonht synht)
 		   (list (mk-cat (machash 'ARG synht)))
