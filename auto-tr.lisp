@@ -3,6 +3,8 @@
 
 ;(in-package :auto-tr)
 
+(defccglab *ht-tr* nil) ; hash table for derived tr rules--for subsumption check after compile
+                        ; key : lex rule key value: lex rule including key as hashtable
 (defccglab *VERBS-IN-GRAMMAR* NIL)
 (defccglab *lex-item-TEMPLATE* `((KEY nil) (PHON nil) (MORPH nil)
 		      (SYN nil)
@@ -165,12 +167,53 @@
 	     (set-key temp (get-next-key-id))
 	     (set-index temp (gensym "auto-tr-"))
 	     (push temp *RAISED-LEX-RULES*))))
-  (reverse *RAISED-LEX-RULES*))
+  t)
 
-(defun compile-and-subsume-tr (arg morphs)
-  "first finds all rules, then reduces the rule set to MGUs of pairs iteratively.
+(defun hash-tr ()
+  "creates the hash table for inferred rules"
+  (setf *ht-tr* (make-hash-table :test #'equal :size (+ (length *RAISED-LEX-RULES*) 10)))
+  (dolist (lexr (reverse *RAISED-LEX-RULES*))
+    (setf (machash (nv-list-val 'KEY lexr) *ht-tr*) (hash-lexrule lexr))))
+
+(defun subsume-tr ()
+  "v1 and v2 are hash values. INSYN and OUTSYN are hash-valued SYNs due to hash-tr; cat-match needs this."
+  (maphash 
+    #'(lambda (k1 v1)
+	(maphash 
+	  #'(lambda (k2 v2)
+	      (if (not (equal k1 k2))
+		(multiple-value-bind (match1 inbinds1 inbinds2) 
+		  (cat-match (machash 'INSYN v1)
+			     (machash 'INSYN v2))
+		  (and match1
+		       (multiple-value-bind (match2 outbinds1 outbinds2)
+			 (cat-match (machash 'OUTSYN v1)
+				    (machash 'OUTSYN v2))
+			 (and match2     ; if both in and out do not match, they are different rules
+			      (let 
+				((newht (make-lrule-hashtable))
+				 (key (gensym "mgu-k-")))
+				(setf (machash 'KEY newht) key)
+				(setf (machash 'INDEX newht) (gensym "mgu-ix-")) 
+				(setf (machash 'PARAM newht) 1.0)  ; prior for inferred rules
+				(setf (machash 'INSEM newht) 'LF) 
+				(setf (machash 'OUTSEM newht) '(LAM LF (LAM P (P LF)))) ; this is universal
+				(setf (machash 'INSYN newht) 
+				      (realize-binds (machash 'INSYN v1) (append inbinds1 inbinds2)))     ; MGU of input
+				(setf (machash 'OUTSYN newht) 
+				      (realize-binds (machash 'OUTSYN v1) (append outbinds1 outbinds2))) ; MGU of output
+				(setf (machash key *ht-tr*) newht) ; added to table as it is looped
+				(remhash k1 *ht-tr*)
+				(remhash k2 *ht-tr*))))))))  ; cross your fingers for this destructive hash loop
+	  *ht-tr*))
+    *ht-tr*))
+
+(defun compile-and-subsume-tr (gname vmorphs)
+  "first finds all rules from grammar file with list of verbal POS in vmrophs, 
+  then reduces the rule set to MGUs of pairs iteratively.
   We use hashtables to be compatible with MGU function cat-match---and for efficieny."
-  (hash-tr (compile-tr (arg morphs)))
+  (compile-tr gname vmorphs) ; result in *RAISED-LEX-RULES* in reverse order of find
+  (hash-tr)
   (subsume-tr))
 
 (defun debug-tr (arg morphs) ;to simulate how the work flow looks like
