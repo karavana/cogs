@@ -139,15 +139,59 @@
   (format t "The rules also set to the global variable *RAISED-LEX-RULES*~%")))
 
 (defun add-tr-to-grammar ()
-	"add rules to the currently loaded grammar"
-	(setf cl-user::*ccg-grammar* (append cl-user::*ccg-grammar* (reverse *RAISED-LEX-RULES*)))
-	(format t "Type-raising rules added at the end of *ccg-grammar*~%"))
+  "add rules to the currently loaded grammar"
+  (setf *ccg-grammar* (append *ccg-grammar* (reverse *RAISED-LEX-RULES*)))
+  (format t "~%Type-raising rules added at the end of *ccg-grammar*"))
 
-(defun save-compile (fn)
+(defun mk-bcat (bcatht)
+  (let ((feats nil)
+	(bcat nil))
+    (maphash #'(lambda (k v) (if (equal k 'BCAT)
+			       (push (list k v) bcat)
+			       (push (list k v) feats)))
+	     bcatht)
+    (append bcat (list (list 'FEATS feats)))))
+
+(defun mk-nonht (ht)
+  "return a list of non-hash-valued name-value pairs"
+  (let ((feats nil))
+    (maphash #'(lambda (k v) (if (not (hash-table-p v)) (push (list k v) feats)))
+	     ht)
+    (reverse feats)))
+
+(defun mk-cat (synht &optional (res nil))
+  (cond ((null synht) res)
+	((basicp-hash synht) (append (mk-bcat synht) res)) ; only BCAT and others feats in same synht
+	(t (append (list (mk-cat (machash 'RESULT synht)))
+		   (mk-nonht synht)
+		   (list (mk-cat (machash 'ARG synht)))
+		   res))))
+
+(defun mk-rule (key val)
+  "turn  hashtable val back to list; for saving. INSYN and OUTSYN are hash values in val"
+  (list (list 'INDEX (machash 'INDEX val))
+	(list 'KEY key)
+	(list 'PARAM (machash 'PARAM val))
+	(list 'INSEM (machash 'INSEM val))
+	(list 'OUTSEM (machash 'OUTSEM val))
+	(list 'INSYN (mk-cat (machash 'INSYN val)))
+	(list 'OUTSYN (mk-cat (machash 'OUTSYN val)))))
+
+(defun save-compile (fn &optional (msg ""))
   (add-tr-to-grammar)
   (save-grammar fn)
-  (format t "~%saved."))
+  (format t "~%compiled~A and saved." msg))
 
+(defun save-subsumption (fn)
+  "the result of subsumption is in *ht-tr*."
+  (let ((rules nil))
+    (maphash 
+      #'(lambda (k v)
+	  (push (mk-rule k v) rules))
+      *ht-tr*)
+    (setf *RAISED-LEX-RULES* rules))
+  (save-compile fn ", subsumed"))
+	   
 ;---------------------------------------------------------------
 ;------------to create lex-rule entries-------------------------
 ;---------------------------------------------------------------
@@ -156,8 +200,8 @@
   (setf *RAISED-LEX-RULES* NIL) ;set to default
   (setf *VERBS-IN-GRAMMAR* NIL)
   (load-gram arg)  ; ded and ind have same format--changed to load-gram
-  (find-morph-v cl-user::*ccg-grammar* morphs)
-  (get-last-key-id cl-user::*ccg-grammar*)
+  (find-morph-v *ccg-grammar* morphs)
+  (get-last-key-id *ccg-grammar*)
   (dolist (v-entry *VERBS-IN-GRAMMAR*)
     (type-raise (second (assoc 'SYN v-entry)))
     (loop while (not (equal 0 (length *SYNS*)))
@@ -220,8 +264,8 @@
   (setq *RAISED-LEX-ITEMS* NIL) ;set to default
   (setq *VERBS-IN-GRAMMAR* NIL)
   (load-gram arg)
-  (find-morph-v cl-user::*ccg-grammar* morphs)
-  (get-last-key-id cl-user::*ccg-grammar*)
+  (find-morph-v *ccg-grammar* morphs)
+  (get-last-key-id *ccg-grammar*)
   (dolist (keys *VERBS-IN-GRAMMAR*)
     (dolist (cats-in-keys keys)
       (if  (equal 'SYN (first cats-in-keys)) 
