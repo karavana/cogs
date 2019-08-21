@@ -1,0 +1,10 @@
+% to try lex rules on a phrase 
+% semantics is simplified to check training
+the d := np/*n: \x. x;
+man n := n: !man;
+boy n := n: !boy;
+in p  := (n\n)/*np: \x\y.!in x y;
+corner n := n: !corner;
+hits v := (s\np[case=abs])/np[case=nac]: \x\y.!hits x y;
+walks v := (s\np[case=nom])/np[case=acc]: \x\y.!walks x y;
+sees v := (s\np[case=tac])/np[case=macc]: \x\y.!sees x y;

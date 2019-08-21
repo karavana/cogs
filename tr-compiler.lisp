@@ -204,12 +204,13 @@
   (get-last-key-id *ccg-grammar*)
   (dolist (v-entry *VERBS-IN-GRAMMAR*)
     (type-raise (second (assoc 'SYN v-entry)))
-    (loop while (not (equal 0 (length *SYNS*)))
+    (format t "~%args:~A ~2%syns:~A" *ARGS* *SYNS*)
+    (loop while *SYNS*
 	do (let ((temp (copy-alist *lex-rule-TEMPLATE*)))
-	     (set-insyn temp (pop *ARGS*))   ; don't we need to initialize *ARGS* and *SYNS* to nil before the loop?
+	     (set-insyn temp (pop *ARGS*))   ; cb: don't we need to initialize *ARGS* and *SYNS* to nil before the loop?
 	     (set-outsyn temp (pop *SYNS*))
 	     (set-key temp (get-next-key-id))
-	     (set-index temp (gensym "auto-tr-"))
+	     (set-index temp (gensym "TRC"))
 	     (push temp *RAISED-LEX-RULES*))))
   t)
 
@@ -236,9 +237,9 @@
 			 (and match2     ; if both in and out do not match, they are different rules
 			      (let 
 				((newht (make-lrule-hashtable))
-				 (key (gensym "mgu-k-")))
+				 (key (get-next-key-id)))  ; keeping keys numeral to be consistent with ccglab
 				(setf (machash 'KEY newht) key)
-				(setf (machash 'INDEX newht) (gensym "mgu-ix-")) 
+				(setf (machash 'INDEX newht) (gensym "MGU")) 
 				(setf (machash 'PARAM newht) 1.0)  ; prior for inferred rules
 				(setf (machash 'INSEM newht) 'LF) 
 				(setf (machash 'OUTSEM newht) '(LAM LF (LAM P (P LF)))) ; this is universal
