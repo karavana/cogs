@@ -204,7 +204,7 @@
   (get-last-key-id *ccg-grammar*)
   (dolist (v-entry *VERBS-IN-GRAMMAR*)
     (type-raise (second (assoc 'SYN v-entry)))
-    (format t "~%args:~A ~2%syns:~A" *ARGS* *SYNS*)
+    ;(format t "~%args:~A ~2%syns:~A" *ARGS* *SYNS*)
     (loop while *SYNS*
 	do (let ((temp (copy-alist *lex-rule-TEMPLATE*)))
 	     (set-insyn temp (pop *ARGS*))   ; cb: don't we need to initialize *ARGS* and *SYNS* to nil before the loop?
@@ -222,36 +222,41 @@
 
 (defun subsume-tr ()
   "v1 and v2 are hash values. INSYN and OUTSYN are hash-valued SYNs due to hash-tr; cat-match needs this."
-  (maphash 
-    #'(lambda (k1 v1)
-	(maphash 
-	  #'(lambda (k2 v2)
-	      (if (not (equal k1 k2))
-		(multiple-value-bind (match1 inbinds1 inbinds2) 
-		  (cat-match (machash 'INSYN v1)
-			     (machash 'INSYN v2))
-		  (and match1
-		       (multiple-value-bind (match2 outbinds1 outbinds2)
-			 (cat-match (machash 'OUTSYN v1)
-				    (machash 'OUTSYN v2))
-			 (and match2     ; if both in and out do not match, they are different rules
-			      (let 
-				((newht (make-lrule-hashtable))
-				 (key (get-next-key-id)))  ; keeping keys numeral to be consistent with ccglab
-				(setf (machash 'KEY newht) key)
-				(setf (machash 'INDEX newht) (gensym "MGU")) 
-				(setf (machash 'PARAM newht) 1.0)  ; prior for inferred rules
-				(setf (machash 'INSEM newht) 'LF) 
-				(setf (machash 'OUTSEM newht) '(LAM LF (LAM P (P LF)))) ; this is universal
-				(setf (machash 'INSYN newht) 
-				      (realize-binds (machash 'INSYN v1) (append inbinds1 inbinds2)))     ; MGU of input
-				(setf (machash 'OUTSYN newht) 
-				      (realize-binds (machash 'OUTSYN v1) (append outbinds1 outbinds2))) ; MGU of output
-				(setf (machash key *ht-tr*) newht) ; added to table as it is looped
-				(remhash k1 *ht-tr*)
-				(remhash k2 *ht-tr*))))))))  ; cross your fingers for this destructive hash loop
-	  *ht-tr*))
-    *ht-tr*))
+  (let ((nochange nil))
+    (loop  until nochange
+	   do
+	   (setf nochange t)
+	   (maphash 
+	     #'(lambda (k1 v1)
+		 (maphash 
+		   #'(lambda (k2 v2)
+		       (if (not (equal k1 k2))
+			 (multiple-value-bind (match1 inbinds1 inbinds2) 
+			   (cat-match (machash 'INSYN v1)
+				      (machash 'INSYN v2))
+			   (and match1
+				(multiple-value-bind (match2 outbinds1 outbinds2)
+				  (cat-match (machash 'OUTSYN v1)
+					     (machash 'OUTSYN v2))
+				  (and match2     ; if both in and out do not match, they are different rules
+				       (let 
+					 ((newht (make-lrule-hashtable))
+					  (key (get-next-key-id)))  ; keeping keys numeral to be consistent with ccglab
+					 (setf (machash 'KEY newht) key)
+					 (setf (machash 'INDEX newht) (gensym "MGU")) 
+					 (setf (machash 'PARAM newht) 1.0)  ; prior for inferred rules
+					 (setf (machash 'INSEM newht) 'LF) 
+					 (setf (machash 'OUTSEM newht) '(LAM LF (LAM P (P LF)))) ; this is universal
+					 (setf (machash 'INSYN newht) 
+					       (realize-binds (machash 'INSYN v1) (append inbinds1 inbinds2)))     ; MGU of input
+					 (setf (machash 'OUTSYN newht) 
+					       (realize-binds (machash 'OUTSYN v1) (append outbinds1 outbinds2))) ; MGU of output
+					 (setf (machash key *ht-tr*) newht) ; added to table as it is looped
+					 (setf nochange nil)
+					 (remhash k1 *ht-tr*)
+					 (remhash k2 *ht-tr*))))))))  ; cross your fingers for this destructive hash loop
+		   *ht-tr*))
+	     *ht-tr*))))
 
 (defun compile-and-subsume-tr (gname vmorphs)
   "first finds all rules from grammar file with list of verbal POS in vmrophs, 
