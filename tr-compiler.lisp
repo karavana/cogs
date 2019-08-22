@@ -1,7 +1,8 @@
-;(defpackage :auto-tr
-;  (:use :cl))         ; keep namespace separate from ccglab, which is in :cl-user -hhcb 
-
-;(in-package :auto-tr)
+;;; ------------------------------------------
+;;; A compiler for type-raising in CCG
+;;; -implemented by Oguzhan Demir
+;;;  with some contributions from Cem Bozsahin
+;;; ------------------------------------------
 
 (defccglab *ht-tr* nil) ; hash table for derived tr rules--for subsumption check after compile
                         ; key : lex rule key value: lex rule including key as hashtable
@@ -18,7 +19,6 @@
 (defccglab *SYNS* NIL)
 (defccglab *LAST-KEY-ID* NIL)
 (defccglab *ARGS* NIL)
-;(defccglab *MORPHS* '(TVING>)) ;now is given as an arg to main
 (defccglab *RAISED-LEX-RULES* NIL)
 (defccglab *RAISED-LEX-ITEMS* NIL)
 ;--------get methods----------;
@@ -91,10 +91,7 @@
 
 (defun load-gram (path_to_ded)
   "load the ded file from a path"
-;  (in-package :cl-user) ; to load into *ccg-grammar* there
-  (load path_to_ded)
-;  (in-package :auto-tr))
-)
+  (load path_to_ded))
 
 (defun find-morph-v (ccg-grammar morphs)
 	"find verb morphemes"
@@ -192,6 +189,49 @@
     (setf *RAISED-LEX-RULES* rules))
   (save-compile fn ", subsumed"))
 	   
+;;; ------------------------
+;;; MGU for rule subsumption, adopted from ccglab's unification without -mgu suffix
+;;; in rule subsumption, unlike in projection, we must pass on all unifiable features, rather than just check them.
+;;; -hhcb
+;;; ------------------------
+
+(defun cat-match-mgu (sht1 sht2)
+  (cond ((and (basicp-hash sht1) (basicp-hash sht2))
+	 (let ((binds1 nil)
+	       (binds2 nil))
+	   (maphash #'(lambda (feat1 v1)  ; check sht1 feats and find binds
+			(let ((v2 (machash feat1 sht2)))
+			  (and v1 v2 (not (var? v1))(not (var? v2))(not (equal v1 v2))  ; changed eql to equal. (BCAT v)
+			       (return-from cat-match-mgu (values nil nil nil)))        ; can have list value for v because of singletons
+			  (push (list feat1 v1) binds1)))   ; just put them all in, hashtable semantics eliminates duplicates
+		    sht1)
+	   (maphash #'(lambda (feat2 v2)  ; if we are here, unification must have succeeded
+			(push (list feat2 v2) binds2))
+		    sht2)
+	   (values t binds1 binds2)))
+	((and (complexp-hash sht1) (complexp-hash sht2)
+	      (eql (machash 'DIR sht1)(machash 'DIR sht2))
+	      (mod-compatiblep (machash 'MODAL sht1) (machash 'MODAL sht2))
+	      (multiple-value-bind (res1 b1 b2)
+		(cat-match-mgu (machash 'ARG sht1) (machash 'ARG sht2))
+		(and res1 (multiple-value-bind (res2 b12 b22)
+			    (cat-match-mgu (machash 'RESULT sht1) (machash 'RESULT sht2))
+			    (return-from cat-match-mgu (values res2 (append b12 b1) (append b22 b2))))))))
+	(t (values nil nil nil))))
+
+(defun realize-binds2-mgu (newht binds)
+  (cond  ((basicp-hash newht)
+	  (dolist (fv binds)
+	    (setf (machash (first fv) newht) (second fv)))) ; just override if already exists--unification already succeeded
+         (t (progn (realize-binds2-mgu (machash 'RESULT newht) binds)
+                   (realize-binds2-mgu (machash 'ARG newht) binds))))
+    newht)
+
+(defun realize-binds-mgu (sht binds)
+  (let ((newht (copy-hashtable sht)))
+    (cond ((null binds) newht)
+          (t (realize-binds2-mgu newht binds)))))
+
 ;---------------------------------------------------------------
 ;------------to create lex-rule entries-------------------------
 ;---------------------------------------------------------------
@@ -207,10 +247,10 @@
     ;(format t "~%args:~A ~2%syns:~A" *ARGS* *SYNS*)
     (loop while *SYNS*
 	do (let ((temp (copy-alist *lex-rule-TEMPLATE*)))
-	     (set-insyn temp (pop *ARGS*))   ; cb: don't we need to initialize *ARGS* and *SYNS* to nil before the loop?
+	     (set-insyn temp (pop *ARGS*))   ; CB note: a loop exhausts *SYNS* and *ARGS* later--no need to reinitialise
 	     (set-outsyn temp (pop *SYNS*))
 	     (set-key temp (get-next-key-id))
-	     (set-index temp (gensym "TRC"))
+	     (set-index temp (gensym "_TRC"))
 	     (push temp *RAISED-LEX-RULES*))))
   t)
 
@@ -232,25 +272,25 @@
 		   #'(lambda (k2 v2)
 		       (if (not (equal k1 k2))
 			 (multiple-value-bind (match1 inbinds1 inbinds2) 
-			   (cat-match (machash 'INSYN v1)
-				      (machash 'INSYN v2))
+			   (cat-match-mgu (machash 'INSYN v1)
+					  (machash 'INSYN v2))
 			   (and match1
 				(multiple-value-bind (match2 outbinds1 outbinds2)
-				  (cat-match (machash 'OUTSYN v1)
-					     (machash 'OUTSYN v2))
+				  (cat-match-mgu (machash 'OUTSYN v1)
+						 (machash 'OUTSYN v2))
 				  (and match2     ; if both in and out do not match, they are different rules
 				       (let 
 					 ((newht (make-lrule-hashtable))
 					  (key (get-next-key-id)))  ; keeping keys numeral to be consistent with ccglab
 					 (setf (machash 'KEY newht) key)
-					 (setf (machash 'INDEX newht) (gensym "MGU")) 
+					 (setf (machash 'INDEX newht) (gensym "_MGU")) 
 					 (setf (machash 'PARAM newht) 1.0)  ; prior for inferred rules
 					 (setf (machash 'INSEM newht) 'LF) 
 					 (setf (machash 'OUTSEM newht) '(LAM LF (LAM P (P LF)))) ; this is universal
 					 (setf (machash 'INSYN newht) 
-					       (realize-binds (machash 'INSYN v1) (append inbinds1 inbinds2)))     ; MGU of input
+					       (realize-binds-mgu (machash 'INSYN v1) (append inbinds1 inbinds2)))     ; MGU of input
 					 (setf (machash 'OUTSYN newht) 
-					       (realize-binds (machash 'OUTSYN v1) (append outbinds1 outbinds2))) ; MGU of output
+					       (realize-binds-mgu (machash 'OUTSYN v1) (append outbinds1 outbinds2))) ; MGU of output
 					 (setf (machash key *ht-tr*) newht) ; added to table as it is looped
 					 (setf nochange nil)
 					 (remhash k1 *ht-tr*)
@@ -286,4 +326,3 @@
 	       (setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
   (write-to-file "raised-lex-items.ded" *RAISED-LEX-ITEMS*))
 
-;(in-package :cl-user) ; get out of package after load
