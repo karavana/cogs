@@ -1,7 +1,7 @@
 ;;; ------------------------------------------
 ;;; A compiler for type-raising in CCG
 ;;; -implemented by Oguzhan Demir
-;;;  with some contributions from Cem Bozsahin
+;;;  with some code support from Cem Bozsahin
 ;;; ------------------------------------------
 
 (defccglab *ht-tr* nil) ; hash table for derived tr rules--for subsumption check after compile
@@ -190,47 +190,34 @@
   (save-compile fn ", subsumed"))
 	   
 ;;; ------------------------
-;;; MGU for rule subsumption, adopted from ccglab's unification without -mgu suffix
-;;; in rule subsumption, unlike in projection, we must pass on all unifiable features, rather than just check them.
+;;; MLU for rule subsumption, adopted from ccglab's unification without -mlu suffix
+;;; in rule subsumption, unlike in projection, we must pass on all local (i.e. basic cat-specific) unifiable features, rather than just check them.
+;;; This means in projection we compute MGU, in rule subsumption we compute Most Local Unifier (MLU) to avoid
+;;;   global variable generation and general unification.
 ;;; -hhcb
 ;;; ------------------------
 
-(defun cat-match-mgu (sht1 sht2)
+(defun cat-match-mlu (sht1 sht2)
   (cond ((and (basicp-hash sht1) (basicp-hash sht2))
-	 (let ((binds1 nil)
-	       (binds2 nil))
-	   (maphash #'(lambda (feat1 v1)  ; check sht1 feats and find binds
-			(let ((v2 (machash feat1 sht2)))
-			  (and v1 v2 (not (var? v1))(not (var? v2))(not (equal v1 v2))  ; changed eql to equal. (BCAT v)
-			       (return-from cat-match-mgu (values nil nil nil)))        ; can have list value for v because of singletons
-			  (push (list feat1 v1) binds1)))   ; just put them all in, hashtable semantics eliminates duplicates
-		    sht1)
-	   (maphash #'(lambda (feat2 v2)  ; if we are here, unification must have succeeded
-			(push (list feat2 v2) binds2))
-		    sht2)
-	   (values t binds1 binds2)))
+	 (maphash #'(lambda (feat1 v1)  
+		      (let ((v2 (machash feat1 sht2)))
+			(and v1 v2 (not (var? v1)) (not (var? v2)) (not (equal v1 v2))
+			     (return-from cat-match-mlu (values nil nil nil)))
+			(cond ((var? v1) (remhash feat1 v1))          ; delete uncommmon or var valued features after unif success
+			      ((null v2) (remhash feat1 v1)))))
+		  sht1)
+	 (values t))
 	((and (complexp-hash sht1) (complexp-hash sht2)
 	      (eql (machash 'DIR sht1)(machash 'DIR sht2))
-	      (mod-compatiblep (machash 'MODAL sht1) (machash 'MODAL sht2))
-	      (multiple-value-bind (res1 b1 b2)
-		(cat-match-mgu (machash 'ARG sht1) (machash 'ARG sht2))
-		(and res1 (multiple-value-bind (res2 b12 b22)
-			    (cat-match-mgu (machash 'RESULT sht1) (machash 'RESULT sht2))
-			    (return-from cat-match-mgu (values res2 (append b12 b1) (append b22 b2))))))))
-	(t (values nil nil nil))))
-
-(defun realize-binds2-mgu (newht binds)
-  (cond  ((basicp-hash newht)
-	  (dolist (fv binds)
-	    (setf (machash (first fv) newht) (second fv)))) ; just override if already exists--unification already succeeded
-         (t (progn (realize-binds2-mgu (machash 'RESULT newht) binds)
-                   (realize-binds2-mgu (machash 'ARG newht) binds))))
-    newht)
-
-(defun realize-binds-mgu (sht binds)
-  (let ((newht (copy-hashtable sht)))
-    (cond ((null binds) newht)
-          (t (realize-binds2-mgu newht binds)))))
+	      (mod-compatiblep (machash 'MODAL sht1) (machash 'MODAL sht2)))
+	 (let ((arg1 (copy-hashtable (machash 'ARG sht1)))) 
+	   (multiple-value-bind (res1)
+	     (cat-match-mlu arg1 (machash 'ARG sht2))  ; arg1 is modified
+	     (and res1 (let ((res1 (copy-hashtable (machash 'RESULT sht1)))) 
+			 (multiple-value-bind (res2)
+			   (cat-match-mlu res1 (machash 'RESULT sht2)) ; arg1 is modified
+			   (return-from cat-match-mlu (values res2))))))))
+	(t (values nil))))
 
 ;---------------------------------------------------------------
 ;------------to create lex-rule entries-------------------------
@@ -250,7 +237,7 @@
 	     (set-insyn temp (pop *ARGS*))   ; CB note: a loop exhausts *SYNS* and *ARGS* later--no need to reinitialise
 	     (set-outsyn temp (pop *SYNS*))
 	     (set-key temp (get-next-key-id))
-	     (set-index temp (gensym "_TRC"))
+	     (set-index temp (gensym "_TRC"))   ; TRC : TR compiler generates the rule
 	     (push temp *RAISED-LEX-RULES*))))
   t)
 
@@ -271,30 +258,28 @@
 		 (maphash 
 		   #'(lambda (k2 v2)
 		       (if (not (equal k1 k2))
-			 (multiple-value-bind (match1 inbinds1 inbinds2) 
-			   (cat-match-mgu (machash 'INSYN v1)
-					  (machash 'INSYN v2))
-			   (and match1
-				(multiple-value-bind (match2 outbinds1 outbinds2)
-				  (cat-match-mgu (machash 'OUTSYN v1)
-						 (machash 'OUTSYN v2))
-				  (and match2     ; if both in and out do not match, they are different rules
-				       (let 
-					 ((newht (make-lrule-hashtable))
-					  (key (get-next-key-id)))  ; keeping keys numeral to be consistent with ccglab
-					 (setf (machash 'KEY newht) key)
-					 (setf (machash 'INDEX newht) (gensym "_MGU")) 
-					 (setf (machash 'PARAM newht) 1.0)  ; prior for inferred rules
-					 (setf (machash 'INSEM newht) 'LF) 
-					 (setf (machash 'OUTSEM newht) '(LAM LF (LAM P (P LF)))) ; this is universal
-					 (setf (machash 'INSYN newht) 
-					       (realize-binds-mgu (machash 'INSYN v1) (append inbinds1 inbinds2)))     ; MGU of input
-					 (setf (machash 'OUTSYN newht) 
-					       (realize-binds-mgu (machash 'OUTSYN v1) (append outbinds1 outbinds2))) ; MGU of output
-					 (setf (machash key *ht-tr*) newht) ; added to table as it is looped
-					 (setf nochange nil)
-					 (remhash k1 *ht-tr*)
-					 (remhash k2 *ht-tr*))))))))  ; cross your fingers for this destructive hash loop
+			 (let ((in1 (copy-hashtable (machash 'INSYN v1)))) ; matching changes input, work on copy in case of failure
+			   (multiple-value-bind (match1)
+			     (cat-match-mlu in1 (machash 'INSYN v2))   ; arg2 is not modified 
+			     (and match1
+				  (let ((out1 (copy-hashtable (machash 'OUTSYN v1))))
+				    (multiple-value-bind (match2)
+				      (cat-match-mlu out1 (machash 'OUTSYN v2))  ; arg2 is not modified
+				      (and match2     ; if both in and out do not match, they are different rules
+					   (let 
+					     ((newht (make-lrule-hashtable))
+					      (key (get-next-key-id)))  ; keeping keys numeral to be consistent with ccglab
+					     (setf (machash 'KEY newht) key)
+					     (setf (machash 'INDEX newht) (gensym "_MLU"))  ; subsumer generates the rule
+					     (setf (machash 'PARAM newht) 1.0)  ; uniform prior for inferred rules
+					     (setf (machash 'INSEM newht) 'LF)  ; always the same input abstraction by convention 
+					     (setf (machash 'OUTSEM newht) '(LAM LF (LAM P (P LF)))) ; this is universal
+					     (setf (machash 'INSYN newht) in1)   ; MGU of input (1st arg modified in basic cats during match)
+					     (setf (machash 'OUTSYN newht) out1) ; MGU of output (1st arg modified in basic cats during match)
+					     (setf (machash key *ht-tr*) newht) ; added to table as it is looped
+					     (setf nochange nil)
+					     (remhash k1 *ht-tr*)
+					     (remhash k2 *ht-tr*))))))))))  ; cross your fingers for this destructive hash loop
 		   *ht-tr*))
 	     *ht-tr*))))
 
