@@ -1,0 +1,9 @@
+% checking for subsumption
+adam n := np[case=nom] :!adam;
+kitabi n := np[case=acc] : !book;
+okudu v := (s\np[case=nom])\np[case=acc] : \x\y.!read x y;
+buldu v := (s\np[case=nom])\np[case=acc] : \x\y.!find x y;
+yirtti v := (s\np[case=nom])\np[case=acc] : \x\y.!tear x y;
+okudum v := s\np[case=acc] : \x.!read x !i;    % trying lexicalization of pro-drop to create s/(s\npacc)
+buldum v := s\np[case=acc] : \x.!find x !i;
+yirttim v := s\np[case=acc] : \x.!tear x !i;

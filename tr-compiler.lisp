@@ -199,12 +199,12 @@
 
 (defun cat-match-mlu (sht1 sht2)
   (cond ((and (basicp-hash sht1) (basicp-hash sht2))
-	 (maphash #'(lambda (feat1 v1)  
+	 (maphash #'(lambda (feat1 v1)
 		      (let ((v2 (machash feat1 sht2)))
 			(and v1 v2 (not (var? v1)) (not (var? v2)) (not (equal v1 v2))
-			     (return-from cat-match-mlu (values nil nil nil)))
-			(cond ((var? v1) (remhash feat1 v1))          ; delete uncommmon or var valued features after unif success
-			      ((null v2) (remhash feat1 v1)))))
+			     (return-from cat-match-mlu (values nil)))
+			(cond ((var? v1) (remhash feat1 sht1))          ; delete uncommmon or var valued features after unif success
+			      ((null v2) (remhash feat1 sht1)))))
 		  sht1)
 	 (values t))
 	((and (complexp-hash sht1) (complexp-hash sht2)

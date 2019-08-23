@@ -1,0 +1,9 @@
+(
+adam n  |:=|  np |[| case |=| nom |]|   |:| !adam |;| 
+kitabi n  |:=|  np |[| case |=| acc |]|   |:|  !book |;| 
+okudu v  |:=|   |(| s |\\| np |[| case |=| nom |,| f1 |=| v1 |,| f5 |=| v5 |]|  |)|  |\\| np |[| case |=| acc |,| f2 |=| v2 |]|   |:|   |\\| x |\\| y |.| !read x y |;| 
+buldu v  |:=|   |(| s |\\| np |[| case |=| nom |,| f1 |=| ?v |]|  |)|  |\\| np |[| case |=| acc |,| f4 |=| v4 |]|   |:|   |\\| x |\\| y |.| !find x y |;| 
+yirtti v  |:=|   |(| s |\\| np |[| case |=| nom |,| f3 |=| v3 |]|  |)|  |\\| np |[| case |=| acc |,| f2 |=| ?vx |]|   |:|   |\\| x |\\| y |.| !tear x y |;| 
+okudum v  |:=|  s |\\| np |[| case |=| acc |]|   |:|   |\\| x |.| !read x !i |;|     
+buldum v  |:=|  s |\\| np |[| case |=| acc |]|   |:|   |\\| x |.| !find x !i |;| 
+yirttim v  |:=|  s |\\| np |[| case |=| acc |]|   |:|   |\\| x |.| !tear x !i |;| )

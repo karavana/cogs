@@ -1,0 +1,38 @@
+(DEFPARAMETER *CCG-GRAMMAR*
+  '(((KEY 1) (PHON ADAM) (MORPH N) (SYN ((BCAT NP) (FEATS ((CASE NOM)))))
+     (SEM "ADAM") (PARAM 1.0))
+    ((KEY 2) (PHON KITABI) (MORPH N) (SYN ((BCAT NP) (FEATS ((CASE ACC)))))
+     (SEM "BOOK") (PARAM 1.0))
+    ((KEY 3) (PHON OKUDU) (MORPH V)
+     (SYN
+      ((((BCAT S) (FEATS NIL)) (DIR BS) (MODAL ALL)
+        ((BCAT NP) (FEATS ((CASE NOM)))))
+       (DIR BS) (MODAL ALL) ((BCAT NP) (FEATS ((CASE ACC))))))
+     (SEM (LAM X (LAM Y (("READ" X) Y)))) (PARAM 1.0))
+    ((KEY 4) (PHON BULDU) (MORPH V)
+     (SYN
+      ((((BCAT S) (FEATS NIL)) (DIR BS) (MODAL ALL)
+        ((BCAT NP) (FEATS ((CASE NOM)))))
+       (DIR BS) (MODAL ALL) ((BCAT NP) (FEATS ((CASE ACC))))))
+     (SEM (LAM X (LAM Y (("FIND" X) Y)))) (PARAM 1.0))
+    ((KEY 5) (PHON YIRTTI) (MORPH V)
+     (SYN
+      ((((BCAT S) (FEATS NIL)) (DIR BS) (MODAL ALL)
+        ((BCAT NP) (FEATS ((CASE NOM)))))
+       (DIR BS) (MODAL ALL) ((BCAT NP) (FEATS ((CASE ACC))))))
+     (SEM (LAM X (LAM Y (("TEAR" X) Y)))) (PARAM 1.0))
+    ((KEY 6) (PHON OKUDUM) (MORPH V)
+     (SYN
+      (((BCAT S) (FEATS NIL)) (DIR BS) (MODAL ALL)
+       ((BCAT NP) (FEATS ((CASE ACC))))))
+     (SEM (LAM X (("READ" X) "I"))) (PARAM 1.0))
+    ((KEY 7) (PHON BULDUM) (MORPH V)
+     (SYN
+      (((BCAT S) (FEATS NIL)) (DIR BS) (MODAL ALL)
+       ((BCAT NP) (FEATS ((CASE ACC))))))
+     (SEM (LAM X (("FIND" X) "I"))) (PARAM 1.0))
+    ((KEY 8) (PHON YIRTTIM) (MORPH V)
+     (SYN
+      (((BCAT S) (FEATS NIL)) (DIR BS) (MODAL ALL)
+       ((BCAT NP) (FEATS ((CASE ACC))))))
+     (SEM (LAM X (("TEAR" X) "I"))) (PARAM 1.0))))
