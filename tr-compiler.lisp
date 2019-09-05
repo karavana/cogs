@@ -1,5 +1,5 @@
 ;;; ------------------------------------------
-;;; A compiler for type-raising in CCG
+;;; implementing the type-raising algorithm
 ;;; -implemented by Oguzhan Demir
 ;;;  with some code support from Cem Bozsahin
 ;;; ------------------------------------------
@@ -83,11 +83,6 @@
 	"replaces the X in the structure (OUTSYN X)"
 	(rplacd (assoc 'outsyn l) (wrap X)))
 ;------------end of set methods-----------------;
-
-
-(defun reduce-parenthesis (l)
-	"get rid of the list's extra parentheses"
-	(reduce #'union l))
 
 (defun load-gram (path_to_ded)
   "load the ded file from a path"
