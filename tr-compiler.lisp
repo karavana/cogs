@@ -38,8 +38,8 @@
 	(assoc 'DIR l))
 
 (defun get-last-key-id (l)
-	"latest key id in the structure---no guarantee that .ded file is ordered by key; find the max"
-	(setf *LAST-KEY-ID* -1) ; no negatives in translation from .ccg to .ded
+	"latest key id in the structure---no guarantee that .ded or .ind file is ordered by key; find the max"
+	(setf *LAST-KEY-ID* -1) ; no negatives in translation from .ccg to .ded --hope it continues in .ind
 	(dolist (e l)
 		(if (< *LAST-KEY-ID* (second (assoc 'KEY e)))
 		  (setf *LAST-KEY-ID* (second (assoc 'KEY e))))))
@@ -84,9 +84,10 @@
 	(rplacd (assoc 'outsyn l) (wrap X)))
 ;------------end of set methods-----------------;
 
-(defun load-gram (path_to_ded)
-  "load the ded file from a path"
-  (load path_to_ded))
+(defun load-gram (path_to_gr)
+  "load the ded or ind file from a path"
+  (safely-load path_to_gr)
+  (if *error* (format t "~%No such file: ~A" path_to_gr)))
 
 (defun find-morph-v (ccg-grammar morphs)
 	"find verb morphemes"
@@ -108,17 +109,17 @@
     	(values NIL c))))
 	
 
-(defun type-raise (cat)
+(defun find-type-raise (cat)
 	"type raising operation on the given category"
 		(if (not (is-complex-cat cat)) 
-			(return-from type-raise))
+			(return-from find-type-raise))
 		(let ((dir-of-cat (get-dir cat))
 			 (modal-of-dir (get-modal-of-dir cat)))
 			 (if (equal '(DIR BS) dir-of-cat)
 				(push (append (wrap (car cat)) (wrap '(DIR FS)) (wrap modal-of-dir) (wrap cat)) *SYNS*) 
 				(push (append (wrap (car cat)) (wrap '(DIR BS)) (wrap modal-of-dir) (wrap cat)) *SYNS*))
 			 (push (car (reverse cat)) *ARGS*) 
-			 (type-raise (car cat))))
+			 (find-type-raise (car cat))))
 
 (defun write-to-file (path file)
 	"Writes the 'file' to a specified 'path'"
@@ -221,11 +222,13 @@
 (defun compile-tr (arg morphs) 
   (setf *RAISED-LEX-RULES* NIL) ;set to default
   (setf *VERBS-IN-GRAMMAR* NIL)
-  (load-gram arg)  ; ded and ind have same format--changed to load-gram
+  (load-gram arg)  ; ded and ind have same format
+  (if *error* (progn (format t "~%aborting compile; currently loaded grammar is unchanged")
+		     (return-from compile-tr)))
   (find-morph-v *ccg-grammar* morphs)
   (get-last-key-id *ccg-grammar*)
   (dolist (v-entry *VERBS-IN-GRAMMAR*)
-    (type-raise (second (assoc 'SYN v-entry)))
+    (find-type-raise (second (assoc 'SYN v-entry)))
     ;(format t "~%args:~A ~2%syns:~A" *ARGS* *SYNS*)
     (loop while *SYNS*
 	do (let ((temp (copy-alist *lex-rule-TEMPLATE*)))
@@ -285,24 +288,3 @@
   (compile-tr gname vmorphs) ; result in *RAISED-LEX-RULES* in reverse order of find
   (hash-tr)
   (subsume-tr))
-
-(defun debug-tr (arg morphs) ;to simulate how the work flow looks like
-  (setq *RAISED-LEX-ITEMS* NIL) ;set to default
-  (setq *VERBS-IN-GRAMMAR* NIL)
-  (load-gram arg)
-  (find-morph-v *ccg-grammar* morphs)
-  (get-last-key-id *ccg-grammar*)
-  (dolist (keys *VERBS-IN-GRAMMAR*)
-    (dolist (cats-in-keys keys)
-      (if  (equal 'SYN (first cats-in-keys)) 
-	(type-raise (second cats-in-keys))))
-    (loop while (not (equal 0 (length *SYNS*)))
-	  do (let ((temp (copy-alist *lex-item-TEMPLATE*)))
-	       (set-morph temp (get-morph keys))
-	       (set-phon temp (get-phon keys))
-	       (set-syn temp (pop *SYNS*)) ;pop *syns* until empty
-	       (set-sem temp (pop *ARGS*))
-	       (set-key temp (get-next-key-id))
-	       (setf *RAISED-LEX-ITEMS* (append *RAISED-LEX-ITEMS* (wrap temp))))))
-  (write-to-file "raised-lex-items.ded" *RAISED-LEX-ITEMS*))
-
