@@ -5,3 +5,5 @@ every argument of every such element it generates the type-raised type. For exam
 (S\NP)/NP, it will first take the ‘/NP’ and raise it to (S\NP)\((S\NP)/NP), because of its directionality.
 Then it will take the ‘\NP’ and raise it to S/(S\NP) because of S\NP that is left once we are done with the
 ‘/NP’. The semantics is always the same: λ p.p a0 for some argument a0.
+
+For the duplicate entries we subsume the generated rules. Check the repo cb-updates and go for the lisp file tr-compiler, there you will find the code that does the subsumption as well.
